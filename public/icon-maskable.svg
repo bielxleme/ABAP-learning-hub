@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="mBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14213d"/>
+      <stop offset="50%" stop-color="#1b2a4a"/>
+      <stop offset="100%" stop-color="#0056b3"/>
+    </linearGradient>
+    <linearGradient id="mBadgeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0070f2"/>
+      <stop offset="100%" stop-color="#0051b3"/>
+    </linearGradient>
+    <linearGradient id="mAccentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Full bleed background for Android maskable cropping -->
+  <rect width="512" height="512" fill="url(#mBgGrad)"/>
+
+  <!-- Content comfortably centered within safe 80% circle (radius ~200) -->
+  <g transform="translate(0, 5)">
+    <!-- Terminal Window / Card -->
+    <rect x="96" y="96" width="320" height="310" rx="28" fill="#0b1329" stroke="#0070f2" stroke-width="4"/>
+    
+    <!-- Title bar -->
+    <path d="M 96 124 Q 96 96 124 96 L 388 96 Q 416 96 416 124 L 416 140 L 96 140 Z" fill="#1b2a4a"/>
+    <circle cx="128" cy="118" r="6" fill="#ef4444"/>
+    <circle cx="148" cy="118" r="6" fill="#f59e0b"/>
+    <circle cx="168" cy="118" r="6" fill="#10b981"/>
+    <text x="264" y="123" fill="#93c5fd" font-family="sans-serif" font-size="13" font-weight="bold" text-anchor="middle">SAP ABAP HUB</text>
+
+    <!-- SAP Badge -->
+    <rect x="186" y="165" width="140" height="66" rx="12" fill="url(#mBadgeGrad)" stroke="#60a5fa" stroke-width="2"/>
+    <text x="256" y="212" fill="#ffffff" font-family="sans-serif" font-size="38" font-weight="900" text-anchor="middle" letter-spacing="3">SAP</text>
+
+    <!-- ABAP Label -->
+    <rect x="166" y="255" width="180" height="42" rx="21" fill="url(#mAccentGrad)"/>
+    <text x="256" y="284" fill="#0f172a" font-family="sans-serif" font-size="24" font-weight="900" text-anchor="middle" letter-spacing="3">ABAP</text>
+
+    <!-- Asterisk Badge -->
+    <circle cx="340" cy="170" r="22" fill="#f59e0b" stroke="#ffffff" stroke-width="3"/>
+    <text x="340" y="182" fill="#0f172a" font-family="Georgia, serif" font-size="32" font-weight="bold" text-anchor="middle">*</text>
+
+    <!-- Bottom subrc indicator -->
+    <rect x="96" y="366" width="320" height="40" rx="0" fill="#1e293b"/>
+    <text x="256" y="391" fill="#4ade80" font-family="monospace" font-size="13" text-anchor="middle" font-weight="bold">SY-SUBRC = 0</text>
+  </g>
+</svg>

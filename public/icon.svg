@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14213d"/>
+      <stop offset="50%" stop-color="#1b2a4a"/>
+      <stop offset="100%" stop-color="#0056b3"/>
+    </linearGradient>
+    <linearGradient id="badgeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0070f2"/>
+      <stop offset="100%" stop-color="#0051b3"/>
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="512" height="512" rx="108" fill="url(#bgGrad)"/>
+  
+  <!-- Subtle border accent -->
+  <rect x="8" y="8" width="496" height="496" rx="100" fill="none" stroke="#ffffff" stroke-opacity="0.12" stroke-width="6"/>
+
+  <!-- Center Shield / Terminal Window -->
+  <g filter="url(#shadow)">
+    <rect x="76" y="86" width="360" height="340" rx="32" fill="#0b1329" stroke="#0070f2" stroke-width="4"/>
+    
+    <!-- Window Title Bar -->
+    <path d="M 76 118 Q 76 86 108 86 L 404 86 Q 436 86 436 118 L 436 136 L 76 136 Z" fill="#1b2a4a"/>
+    <circle cx="112" cy="111" r="7" fill="#ef4444"/>
+    <circle cx="134" cy="111" r="7" fill="#f59e0b"/>
+    <circle cx="156" cy="111" r="7" fill="#10b981"/>
+    <text x="256" y="116" fill="#93c5fd" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="700" text-anchor="middle" letter-spacing="1">SAP NETWEAVER SE38</text>
+
+    <!-- Code Display Inside -->
+    <!-- Code Brackets & Accent Asterisk -->
+    <text x="130" y="240" fill="#38bdf8" font-family="'Courier New', monospace" font-size="78" font-weight="900">{</text>
+    <text x="350" y="240" fill="#38bdf8" font-family="'Courier New', monospace" font-size="78" font-weight="900">}</text>
+
+    <!-- SAP Primary Badge -->
+    <rect x="176" y="170" width="160" height="74" rx="14" fill="url(#badgeGrad)" stroke="#60a5fa" stroke-width="2"/>
+    <text x="256" y="222" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="44" font-weight="900" text-anchor="middle" letter-spacing="3">SAP</text>
+
+    <!-- ABAP Label -->
+    <rect x="156" y="270" width="200" height="48" rx="24" fill="url(#accentGrad)"/>
+    <text x="256" y="303" fill="#0f172a" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="900" text-anchor="middle" letter-spacing="4">ABAP 7.50</text>
+
+    <!-- Glowing Asterisk Badge (Feature highlight) -->
+    <circle cx="360" cy="170" r="26" fill="#f59e0b" stroke="#ffffff" stroke-width="3"/>
+    <text x="360" y="184" fill="#0f172a" font-family="Georgia, serif" font-size="38" font-weight="bold" text-anchor="middle">*</text>
+
+    <!-- Status bar simulation -->
+    <rect x="76" y="386" width="360" height="40" rx="0" fill="#1e293b"/>
+    <circle cx="106" cy="406" r="6" fill="#10b981"/>
+    <text x="124" y="411" fill="#cbd5e1" font-family="monospace" font-size="14">SY-SUBRC = 0 (RC 00)</text>
+    <text x="390" y="411" fill="#38bdf8" font-family="monospace" font-size="14" font-weight="bold">100</text>
+  </g>
+</svg>

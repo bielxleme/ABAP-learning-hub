@@ -1,0 +1,8 @@
+{
+  "name": "SAP ABAP Learning Hub",
+  "description": "Aplicativo intuitivo, interativo e gamificado para aprender SAP ABAP com editor de código, validação de sintaxe, simulador de execução, quizzes por níveis, conquistas e tutor IA especializado em SAP.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
