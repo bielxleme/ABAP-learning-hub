@@ -17,27 +17,42 @@ import {
   Maximize2,
   Minimize2,
   FileCheck2,
-  Layers
+  Layers,
+  Database,
+  Table,
+  AlertTriangle,
+  BrainCircuit
 } from 'lucide-react';
-import { QuizDifficulty, QuestionType, QuizQuestion, UserAnswerHistory, SimuladoResult } from '../types';
+import { QuizDifficulty, QuestionType, QuizQuestion, UserAnswerHistory, SimuladoResult, UserErrorRecord } from '../types';
 import { QUIZ_QUESTIONS } from '../data/quizData';
 import { ABAP_LEVELS } from '../data/abapLevels';
 import { SimuladoModal } from './SimuladoModal';
+import { AbapPracticeLab } from './AbapPracticeLab';
+import { ErrorDiagnosticPanel } from './ErrorDiagnosticPanel';
 import { sounds } from '../utils/soundEffects';
 
 interface QuizSectionProps {
   completedQuestionIds: string[];
   onAnswerQuestion: (history: UserAnswerHistory, xpEarned: number) => void;
   onSimuladoCompleted?: (result: SimuladoResult) => void;
+  errorLogs?: UserErrorRecord[];
+  answerHistory?: UserAnswerHistory[];
+  onRecordError?: (category: 'SELECT_SQL' | 'INTERNAL_TABLES' | 'PUNCTUATION_PERIOD' | 'DATA_DECLARATION' | 'GENERAL_SYNTAX', title: string, detail: string, codeSnippet?: string) => void;
   soundEnabled: boolean;
+  initialSubTab?: 'general' | 'lab' | 'diagnostic';
 }
 
 export const QuizSection: React.FC<QuizSectionProps> = ({
   completedQuestionIds,
   onAnswerQuestion,
   onSimuladoCompleted,
+  errorLogs = [],
+  answerHistory = [],
+  onRecordError,
   soundEnabled,
+  initialSubTab = 'general',
 }) => {
+  const [subTab, setSubTab] = useState<'general' | 'lab' | 'diagnostic'>(initialSubTab);
   const [selectedLevel, setSelectedLevel] = useState<QuizDifficulty | 'Todos'>('Todos');
   const [selectedType, setSelectedType] = useState<QuestionType | 'all'>('all');
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
@@ -148,6 +163,18 @@ export const QuizSection: React.FC<QuizSectionProps> = ({
       );
     } else {
       if (soundEnabled) sounds.playError();
+      if (onRecordError) {
+        const titleLow = currentQuestion.title.toLowerCase();
+        let cat: 'SELECT_SQL' | 'INTERNAL_TABLES' | 'PUNCTUATION_PERIOD' | 'DATA_DECLARATION' | 'GENERAL_SYNTAX' = 'GENERAL_SYNTAX';
+        if (titleLow.includes('select') || titleLow.includes('sql') || titleLow.includes('join') || currentQuestion.level === 'Nível 2') {
+          cat = 'SELECT_SQL';
+        } else if (titleLow.includes('tabela') || titleLow.includes('itab') || titleLow.includes('loop') || titleLow.includes('read') || titleLow.includes('append')) {
+          cat = 'INTERNAL_TABLES';
+        } else if (titleLow.includes('data') || titleLow.includes('type')) {
+          cat = 'DATA_DECLARATION';
+        }
+        onRecordError(cat, currentQuestion.title, feedback || currentQuestion.explanation, userCodeInput || undefined);
+      }
       onAnswerQuestion(
         {
           questionId: currentQuestion.id,
@@ -192,6 +219,94 @@ export const QuizSection: React.FC<QuizSectionProps> = ({
 
   return (
     <div className="space-y-4">
+      {/* Sub-Module Navigation Switch */}
+      <div className="bg-white p-2 sm:p-2.5 rounded-xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
+          <button
+            type="button"
+            onClick={() => setSubTab('general')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+              subTab === 'general'
+                ? 'bg-[#1b2a4a] text-white shadow-xs'
+                : 'text-slate-700 hover:bg-slate-100'
+            }`}
+          >
+            <BrainCircuit className="w-3.5 h-3.5 text-blue-300" />
+            <span>Banco de Quizzes (5 Níveis)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSubTab('lab')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+              subTab === 'lab'
+                ? 'bg-[#0070f2] text-white shadow-xs'
+                : 'text-slate-700 hover:bg-slate-100'
+            }`}
+          >
+            <Database className="w-3.5 h-3.5 text-cyan-300" />
+            <span>Laboratório: SELECT & ITABs</span>
+            <span className="bg-amber-400 text-slate-950 text-[10px] font-black px-1.5 py-0.2 rounded-full">
+              100+ Exercícios
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSubTab('diagnostic')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+              subTab === 'diagnostic'
+                ? 'bg-amber-500 text-slate-950 shadow-xs'
+                : 'text-slate-700 hover:bg-slate-100'
+            }`}
+          >
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-800" />
+            <span>Diagnóstico de Erros & Recuperação</span>
+            {errorLogs.length > 0 && (
+              <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full font-mono">
+                {errorLogs.length}
+              </span>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* RENDER SUB-TAB 2: ABAP PRACTICE LAB */}
+      {subTab === 'lab' && (
+        <AbapPracticeLab
+          completedExerciseIds={completedQuestionIds}
+          soundEnabled={soundEnabled}
+          onCompleteExercise={(exerciseId: string, xpEarned: number, category: string) => {
+            onAnswerQuestion(
+              {
+                questionId: exerciseId,
+                questionTitle: `[LAB] Exercício Prático (${category})`,
+                level: 'Nível 1',
+                type: 'code_exercise',
+                isCorrect: true,
+                userAnswer: 'Código validado com sucesso no Laboratório.',
+                date: new Date().toISOString(),
+                feedback: 'Parabéns pela execução correta no Laboratório ABAP!',
+              },
+              xpEarned
+            );
+          }}
+          onRecordError={onRecordError ? (cat, title, detail, code) => onRecordError(cat, title, detail, code) : undefined}
+        />
+      )}
+
+      {/* RENDER SUB-TAB 3: ERROR DIAGNOSTIC PANEL */}
+      {subTab === 'diagnostic' && (
+        <ErrorDiagnosticPanel
+          errorLogs={errorLogs}
+          answerHistory={answerHistory}
+          onPracticeTopic={() => setSubTab('lab')}
+        />
+      )}
+
+      {/* RENDER SUB-TAB 1: GENERAL QUIZ BANK */}
+      {subTab === 'general' && (
+        <div className="space-y-4">
       {/* Header filter bar */}
       <div className="bg-white p-3.5 rounded-lg border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -584,6 +699,8 @@ export const QuizSection: React.FC<QuizSectionProps> = ({
           )}
         </div>
       </div>
+      </div>
+      )}
 
       {/* Level Simulado Modal */}
       <SimuladoModal

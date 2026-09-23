@@ -37,6 +37,8 @@ interface AbapEditorProps {
   onSendToChat: (code: string) => void;
   onSuccessfulSimulation: () => void;
   onRunSimulation?: (mode: 'output' | 'debug') => void;
+  onRecordError?: (category: 'SELECT_SQL' | 'INTERNAL_TABLES' | 'PUNCTUATION_PERIOD' | 'DATA_DECLARATION' | 'GENERAL_SYNTAX', title: string, detail: string, codeSnippet?: string) => void;
+  onNavigateToLab?: () => void;
   soundEnabled: boolean;
 }
 
@@ -142,6 +144,8 @@ export const AbapEditor: React.FC<AbapEditorProps> = ({
   onSendToChat,
   onSuccessfulSimulation,
   onRunSimulation,
+  onRecordError,
+  onNavigateToLab,
   soundEnabled,
 }) => {
   const [errors, setErrors] = useState<AbapSyntaxError[]>([]);
@@ -332,6 +336,17 @@ export const AbapEditor: React.FC<AbapEditorProps> = ({
                 onClick={() => {
                   const errs = lintAbapCode(code);
                   setErrors(errs);
+                  if (errs.length > 0 && onRecordError) {
+                    const primary = errs[0];
+                    const msg = (primary.message + ' ' + (primary.suggestion || '')).toLowerCase();
+                    let cat: 'SELECT_SQL' | 'INTERNAL_TABLES' | 'PUNCTUATION_PERIOD' | 'DATA_DECLARATION' | 'GENERAL_SYNTAX' = 'GENERAL_SYNTAX';
+                    if (msg.includes('ponto') || msg.includes('.')) cat = 'PUNCTUATION_PERIOD';
+                    else if (msg.includes('select') || msg.includes('sql') || msg.includes('into')) cat = 'SELECT_SQL';
+                    else if (msg.includes('loop') || msg.includes('tabela') || msg.includes('itab') || msg.includes('symbol')) cat = 'INTERNAL_TABLES';
+                    else if (msg.includes('data') || msg.includes('types') || msg.includes('parameters')) cat = 'DATA_DECLARATION';
+
+                    onRecordError(cat, `Erro na Linha ${primary.line}: ${primary.message}`, primary.suggestion || primary.message, code);
+                  }
                 }}
                 className="flex items-center space-x-1 px-2 py-0.5 bg-white border border-slate-300 hover:bg-slate-50 rounded text-slate-800 text-[11px] font-semibold"
               >
@@ -366,7 +381,21 @@ export const AbapEditor: React.FC<AbapEditorProps> = ({
               {onRunSimulation && (
                 <button
                   title="Executar no Simulador SAP (F8)"
-                  onClick={() => onRunSimulation('output')}
+                  onClick={() => {
+                    const errs = lintAbapCode(code);
+                    if (errs.length > 0 && onRecordError) {
+                      const primary = errs[0];
+                      const msg = (primary.message + ' ' + (primary.suggestion || '')).toLowerCase();
+                      let cat: 'SELECT_SQL' | 'INTERNAL_TABLES' | 'PUNCTUATION_PERIOD' | 'DATA_DECLARATION' | 'GENERAL_SYNTAX' = 'GENERAL_SYNTAX';
+                      if (msg.includes('ponto') || msg.includes('.')) cat = 'PUNCTUATION_PERIOD';
+                      else if (msg.includes('select') || msg.includes('sql')) cat = 'SELECT_SQL';
+                      else if (msg.includes('loop') || msg.includes('tabela') || msg.includes('itab')) cat = 'INTERNAL_TABLES';
+                      else if (msg.includes('data') || msg.includes('types')) cat = 'DATA_DECLARATION';
+
+                      onRecordError(cat, `Erro de Execução (Linha ${primary.line})`, primary.message, code);
+                    }
+                    onRunSimulation('output');
+                  }}
                   className="flex items-center space-x-1 px-2.5 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded font-bold text-[11px] shadow-2xs ml-1 cursor-pointer"
                 >
                   <Play className="w-3 h-3 fill-white" />
@@ -602,6 +631,25 @@ export const AbapEditor: React.FC<AbapEditorProps> = ({
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {errors.length > 0 && onNavigateToLab && (
+              <div className="bg-amber-50/90 border-t border-amber-200 p-2 px-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div className="flex items-center space-x-2 text-amber-900">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <span className="font-semibold text-[11px]">
+                    Tutor SAP: Dificuldade detectada na sintaxe. Deseja praticar desafios focados no Laboratório?
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={onNavigateToLab}
+                  className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded text-[11px] shadow-2xs transition-all flex items-center gap-1 shrink-0 cursor-pointer"
+                >
+                  <span>Praticar no Laboratório</span>
+                  <ExternalLink className="w-3 h-3" />
+                </button>
               </div>
             )}
           </div>

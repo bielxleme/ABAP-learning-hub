@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { Play, Terminal, HelpCircle, Code2, Bot, Award, Sparkles, BookOpen, Bug, LogIn } from 'lucide-react';
-import { UserProfile, UserAnswerHistory, SimulationResult, SimuladoResult } from './types';
+import { UserProfile, UserAnswerHistory, SimulationResult, SimuladoResult, UserErrorRecord } from './types';
 import { INITIAL_BADGES, INITIAL_ABAP_CODE } from './data/sapReference';
 import { Header } from './components/Header';
 import { AbapEditor } from './components/AbapEditor';
@@ -13,6 +13,7 @@ import { SapCheatSheet } from './components/SapCheatSheet';
 import { SapLogonModal } from './components/SapLogonModal';
 import { AbapGlossaryOverlay } from './components/AbapGlossaryOverlay';
 import { OfflineIndicator } from './components/OfflineIndicator';
+import { AppUpdateToast } from './components/AppUpdateToast';
 import { simulateAbapExecution } from './utils/abapLinter';
 import { sounds } from './utils/soundEffects';
 
@@ -320,6 +321,42 @@ export default function App() {
     setUserProfile((prev) => ({ ...prev, name: newName }));
   };
 
+  const handleRecordError = (
+    category: 'SELECT_SQL' | 'INTERNAL_TABLES' | 'PUNCTUATION_PERIOD' | 'DATA_DECLARATION' | 'GENERAL_SYNTAX',
+    title: string,
+    detail: string,
+    codeSnippet?: string
+  ) => {
+    const newRecord: UserErrorRecord = {
+      id: `err_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      category,
+      title,
+      detail,
+      codeSnippet,
+      timestamp: new Date().toISOString(),
+      resolved: false,
+      source: codeSnippet ? 'editor_syntax' : 'quiz_challenge',
+    };
+
+    setUserProfile((prev) => {
+      const existing = prev.errorLogs || [];
+      if (existing.length > 0 && existing[0].title === title) {
+        return prev;
+      }
+      return {
+        ...prev,
+        errorLogs: [newRecord, ...existing.slice(0, 49)],
+      };
+    });
+  };
+
+  const handleClearResolvedErrors = () => {
+    setUserProfile((prev) => ({
+      ...prev,
+      errorLogs: [],
+    }));
+  };
+
   const handleResetProgress = () => {
     if (userProfile.name) {
       localStorage.removeItem(`sap_abap_user_${userProfile.name}_profile`);
@@ -414,6 +451,9 @@ export default function App() {
               completedQuestionIds={userProfile.completedQuestionIds}
               onAnswerQuestion={handleAnswerQuestion}
               onSimuladoCompleted={handleSimuladoCompleted}
+              errorLogs={userProfile.errorLogs || []}
+              answerHistory={answerHistory}
+              onRecordError={handleRecordError}
               soundEnabled={userProfile.soundEnabled}
             />
           </div>
@@ -428,6 +468,8 @@ export default function App() {
               onSendToChat={handleSendToChat}
               onSuccessfulSimulation={() => handleRunSimulation('output')}
               onRunSimulation={handleRunSimulation}
+              onRecordError={handleRecordError}
+              onNavigateToLab={() => setActiveTab('quiz')}
               soundEnabled={userProfile.soundEnabled}
             />
           </div>
@@ -453,6 +495,10 @@ export default function App() {
             onEquipTitle={handleEquipTitle}
             answerHistory={answerHistory}
             onResetProgress={handleResetProgress}
+            onPracticeTopic={() => {
+              setActiveTab('quiz');
+            }}
+            onClearResolvedErrors={handleClearResolvedErrors}
           />
         )}
 
@@ -481,6 +527,9 @@ export default function App() {
           setCurrentCode((prev) => `${prev}\n\n" Inserido do Glossário:\n${snippet}`);
         }}
       />
+
+      {/* Live Application Update Notification (Android & Desktop) */}
+      <AppUpdateToast />
 
       {/* Offline Status Toast */}
       <OfflineIndicator />

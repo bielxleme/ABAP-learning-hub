@@ -53,9 +53,38 @@ export interface SimuladoResult {
   earnedTitle?: string;
 }
 
+export interface UserErrorRecord {
+  id: string;
+  source: 'editor_syntax' | 'quiz_challenge';
+  category: 'SELECT_SQL' | 'INTERNAL_TABLES' | 'PUNCTUATION_PERIOD' | 'DATA_DECLARATION' | 'LOOPS_CONDITIONS' | 'GENERAL_SYNTAX';
+  title: string;
+  detail: string;
+  codeSnippet?: string;
+  timestamp: string;
+  resolved?: boolean;
+}
+
+export interface LabExercise {
+  id: string;
+  title: string;
+  level: 'Nível 1' | 'Nível 2';
+  category: 'SELECT & Open SQL' | 'Tabelas Internas (ITAB)';
+  instruction: string;
+  initialCode: string;
+  solutionPattern: {
+    requiredTokens: string[];
+    forbiddenTokens?: string[];
+    sampleSolution: string;
+  };
+  explanation: string;
+  xpReward: number;
+}
+
 export interface UserProfile {
   name: string;
   avatar: string;
+  email?: string;
+  googleLinked?: boolean;
   password?: string; // Optional user password for secure logon
   xp: number;
   level: number;
@@ -67,6 +96,7 @@ export interface UserProfile {
   completedQuestionIds: string[];
   badges: string[]; // badge ids
   simuladosHistory?: SimuladoResult[];
+  errorLogs?: UserErrorRecord[];
   soundEnabled: boolean;
 }
 
