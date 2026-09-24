@@ -20,8 +20,9 @@ import {
   AlertCircle,
   HelpCircle
 } from 'lucide-react';
-import { UserProfile } from '../types';
+import { UserProfile, RpgRace } from '../types';
 import { INITIAL_BADGES } from '../data/sapReference';
+import { getRandomRpgRace, RPG_RACES, ALL_RPG_RACES } from '../data/rpgAvatars';
 
 interface SapLogonModalProps {
   currentProfile: UserProfile | null;
@@ -46,7 +47,7 @@ export const SapLogonModal: React.FC<SapLogonModalProps> = ({
   onClose,
 }) => {
   const [activeTab, setActiveTab] = useState<'select' | 'create'>('select');
-  const [selectedUsername, setSelectedUsername] = useState<string>('BLEME');
+  const [selectedUsername, setSelectedUsername] = useState<string>('Convidado SAP');
   const [passwordInput, setPasswordInput] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [savedProfiles, setSavedProfiles] = useState<UserProfile[]>([]);
@@ -63,6 +64,7 @@ export const SapLogonModal: React.FC<SapLogonModalProps> = ({
   const [newEmail, setNewEmail] = useState<string>('bielxleme@gmail.com');
   const [isGoogleLinked, setIsGoogleLinked] = useState<boolean>(true);
   const [newAvatar, setNewAvatar] = useState<string>('👩‍💻');
+  const [newRpgRace, setNewRpgRace] = useState<RpgRace>(() => getRandomRpgRace());
 
   // Load saved profiles from localStorage
   useEffect(() => {
@@ -84,26 +86,45 @@ export const SapLogonModal: React.FC<SapLogonModalProps> = ({
       console.error(e);
     }
 
-    // Default initial user
-    const defaultUser: UserProfile = {
-      name: 'BLEME',
-      avatar: '👩‍💻',
-      email: 'bielxleme@gmail.com',
-      googleLinked: true,
-      xp: 150,
+    // Default initial user is Convidado SAP (Guest user)
+    const defaultGuestUser: UserProfile = {
+      name: 'Convidado SAP',
+      avatar: '👤',
+      rpgRace: 'guerreiro',
+      xp: 0,
       level: 1,
-      rankTitle: 'Estagiária ABAP (SE38)',
-      streakDays: 2,
+      rankTitle: 'Visitante NetWeaver (Convidado)',
+      streakDays: 1,
       lastActiveDate: new Date().toISOString(),
       completedQuestionIds: [],
-      badges: ['badge_first_step', 'badge_account_linked'],
+      badges: [],
       soundEnabled: true,
+      isGuest: true,
     };
-    setSavedProfiles([defaultUser]);
-    localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify([defaultUser]));
+    setSavedProfiles([defaultGuestUser]);
+    localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify([defaultGuestUser]));
   }, [currentProfile]);
 
   if (!isOpen) return null;
+
+  const handleContinueAsGuest = () => {
+    const guestUser: UserProfile = {
+      name: 'Convidado SAP',
+      avatar: '👤',
+      rpgRace: 'guerreiro',
+      xp: 0,
+      level: 1,
+      rankTitle: 'Visitante NetWeaver (Convidado)',
+      streakDays: 1,
+      lastActiveDate: new Date().toISOString(),
+      completedQuestionIds: [],
+      badges: [],
+      soundEnabled: true,
+      isGuest: true,
+    };
+    onLogin(guestUser);
+    if (onClose) onClose();
+  };
 
   const saveUsersDirectory = (users: UserProfile[]) => {
     setSavedProfiles(users);
@@ -209,9 +230,12 @@ export const SapLogonModal: React.FC<SapLogonModalProps> = ({
       initialBadges.push('badge_account_linked');
     }
 
+    const assignedRace: RpgRace = newRpgRace || getRandomRpgRace();
+
     const newUser: UserProfile = {
       name: cleanName,
       avatar: newAvatar,
+      rpgRace: assignedRace,
       email: newEmail.trim() || undefined,
       googleLinked: isGoogleLinked,
       password: newPassword.trim() || undefined,
@@ -281,11 +305,39 @@ export const SapLogonModal: React.FC<SapLogonModalProps> = ({
           {canCancel && onClose && (
             <button
               onClick={onClose}
-              className="text-slate-300 hover:text-white px-2 py-0.5 rounded hover:bg-slate-700/50 text-xs"
+              className="text-slate-300 hover:text-white px-2 py-0.5 rounded hover:bg-slate-700/50 text-xs cursor-pointer"
             >
-              Cancelar
+              Fechar
             </button>
           )}
+        </div>
+
+        {/* First-Screen Suggestion & Guest Access Banner */}
+        <div className="bg-gradient-to-r from-[#102447] via-[#1b3668] to-[#0b5bb5] text-white p-3.5 px-4 border-b border-blue-600/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-start space-x-2.5">
+            <span className="text-xl shrink-0">💡</span>
+            <div className="space-y-0.5">
+              <div className="font-bold text-white flex items-center gap-1.5">
+                <span>Bem-vindo(a) ao SAP ABAP Learning Hub!</span>
+                <span className="bg-amber-400 text-slate-950 text-[10px] font-black px-1.5 py-0.2 rounded font-sans">
+                  Sugerido
+                </span>
+              </div>
+              <p className="text-blue-100 text-[11px] leading-snug">
+                Sugerimos criar seu usuário ou entrar com perfil existente para registrar seu XP, medalhas e RPG. Mas fique à vontade para continuar como Convidado!
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2 w-full sm:w-auto justify-end shrink-0">
+            <button
+              type="button"
+              onClick={handleContinueAsGuest}
+              className="px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded text-xs transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
+            >
+              <span>👤 Continuar como Convidado</span>
+            </button>
+          </div>
         </div>
 
         {/* Tab Navigation */}
@@ -456,18 +508,28 @@ export const SapLogonModal: React.FC<SapLogonModalProps> = ({
             )}
 
             {/* Logon Submit Button */}
-            <div className="pt-2 border-t border-slate-200 flex items-center justify-between">
-              <div className="text-xs text-slate-500">
-                Usuário selecionado: <strong className="text-slate-800 font-mono">{selectedUsername}</strong>
-              </div>
-
+            <div className="pt-2 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
               <button
-                type="submit"
-                className="px-4 py-2 bg-[#0070f2] hover:bg-[#0863cb] text-white rounded font-bold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2"
+                type="button"
+                onClick={handleContinueAsGuest}
+                className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
               >
-                <LogIn className="w-4 h-4" />
-                <span>Fazer Logon</span>
+                <span>👤 Continuar como Convidado</span>
               </button>
+
+              <div className="flex items-center space-x-2">
+                <span className="text-xs text-slate-500 hidden sm:inline">
+                  Usuário: <strong className="text-slate-800 font-mono">{selectedUsername}</strong>
+                </span>
+
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-[#0070f2] hover:bg-[#0863cb] text-white rounded font-bold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 cursor-pointer"
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span>Fazer Logon</span>
+                </button>
+              </div>
             </div>
           </form>
         )}
@@ -566,10 +628,54 @@ export const SapLogonModal: React.FC<SapLogonModalProps> = ({
               </div>
             </div>
 
+            {/* RPG Race Selection (Orc, Mago, Guerreiro, Elfo, Arqueiro, Espírito) */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-slate-700 font-bold text-xs">
+                  Herói de RPG Inicial:
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setNewRpgRace(getRandomRpgRace())}
+                  className="text-[10px] text-blue-600 hover:text-blue-800 font-semibold cursor-pointer"
+                >
+                  🎲 Escolher Aleatório
+                </button>
+              </div>
+
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+                {ALL_RPG_RACES.map((rKey) => {
+                  const rMeta = RPG_RACES[rKey];
+                  const isSelected = newRpgRace === rKey;
+
+                  return (
+                    <button
+                      key={rKey}
+                      type="button"
+                      onClick={() => {
+                        setNewRpgRace(rKey);
+                        setNewAvatar(rMeta.iconEmoji);
+                      }}
+                      className={`p-2 rounded-lg border text-center transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-blue-100 border-blue-500 shadow-xs ring-2 ring-blue-500/50'
+                          : 'bg-white hover:bg-slate-100 border-slate-200'
+                      }`}
+                    >
+                      <div className="text-xl">{rMeta.iconEmoji}</div>
+                      <div className="text-[10px] font-bold truncate text-slate-800 mt-0.5">
+                        {rMeta.name}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Avatar Selection */}
             <div>
               <label className="block text-slate-700 font-bold text-xs mb-1">
-                Escolha o Avatar do Perfil:
+                Ícone do Avatar:
               </label>
               <div className="flex items-center space-x-2 flex-wrap gap-1">
                 {AVATARS.map((av) => (
@@ -590,22 +696,32 @@ export const SapLogonModal: React.FC<SapLogonModalProps> = ({
             </div>
 
             {/* Submit Button */}
-            <div className="pt-2 border-t border-slate-200 flex items-center justify-end space-x-2">
+            <div className="pt-2 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
               <button
                 type="button"
-                onClick={() => setActiveTab('select')}
-                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-semibold"
+                onClick={handleContinueAsGuest}
+                className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
               >
-                Voltar à Lista
+                <span>👤 Continuar como Convidado</span>
               </button>
 
-              <button
-                type="submit"
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded font-bold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-1.5"
-              >
-                <UserPlus className="w-4 h-4" />
-                <span>Cadastrar e Salvar Usuário</span>
-              </button>
+              <div className="flex items-center space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('select')}
+                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-semibold cursor-pointer"
+                >
+                  Voltar à Lista
+                </button>
+
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded font-bold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span>Cadastrar e Salvar Usuário</span>
+                </button>
+              </div>
             </div>
           </form>
         )}

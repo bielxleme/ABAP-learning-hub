@@ -452,8 +452,8 @@ export const AbapEditor: React.FC<AbapEditorProps> = ({
 
         {/* 4. INTERACTIVE ASTERISK (*) GLOSSARY BAR */}
         {/* "Deixar um botão pequeno com um asterisco em palavras chave, comandos e tudo que possa levar o usuário a se perguntar o que significa tal coisa" */}
-        <div className="bg-[#e9f0f8] border-b border-blue-200 px-3 py-1.5 flex flex-wrap items-center gap-1.5 text-xs">
-          <div className="flex items-center space-x-1 text-blue-900 font-bold text-[11px] mr-1">
+        <div className="bg-[var(--bg-card-hover)] border-b border-[var(--border-subtle)] px-3 py-1.5 flex flex-wrap items-center gap-1.5 text-xs">
+          <div className="flex items-center space-x-1 text-[#0070f2] font-bold text-[11px] mr-1">
             <HelpCircle className="w-3.5 h-3.5 text-[#0070f2]" />
             <span>Comandos no Código (Clique no asterisco * para explicação):</span>
           </div>
@@ -464,9 +464,9 @@ export const AbapEditor: React.FC<AbapEditorProps> = ({
                 key={kw}
                 onClick={() => setGlossaryTerm(kw)}
                 title={`Clique para ver explicação detalhada e exemplos de ${kw}`}
-                className="group flex items-center space-x-1 px-2 py-0.5 bg-white hover:bg-blue-100 text-slate-800 font-mono text-[11px] rounded border border-slate-300 hover:border-blue-400 transition-all shadow-2xs cursor-pointer"
+                className="group flex items-center space-x-1 px-2 py-0.5 bg-[var(--bg-card)] hover:bg-blue-500/20 text-[var(--text-main)] font-mono text-[11px] rounded border border-[var(--border-subtle)] hover:border-blue-400 transition-all shadow-2xs cursor-pointer"
               >
-                <span className="text-[#0000ff] font-bold">{kw}</span>
+                <span className="text-[#0070f2] dark:text-blue-400 font-bold">{kw}</span>
                 <span className="w-3.5 h-3.5 rounded-full bg-[#0070f2] text-white font-bold text-[10px] flex items-center justify-center group-hover:scale-110 transition-transform">
                   *
                 </span>
@@ -475,27 +475,26 @@ export const AbapEditor: React.FC<AbapEditorProps> = ({
 
             <button
               onClick={() => setGlossaryTerm('SELECT')}
-              className="text-[10px] text-blue-700 font-semibold underline hover:text-blue-900 ml-1 cursor-pointer"
+              className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold underline hover:text-blue-700 ml-1 cursor-pointer"
             >
               + Mais Comandos
             </button>
           </div>
         </div>
 
-        {/* 5. SAP NETWEAVER WHITE-BACKGROUND EDITOR CANVAS */}
-        {/* Background: Pure White (#ffffff), Keywords: Blue (#0000ff), Numbers: Teal (#008080), Strings: Green (#008000) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 min-h-[460px] bg-white">
+        {/* 5. SAP NETWEAVER EDITOR CANVAS (Theme-Aware with CSS Variables) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 min-h-[460px] bg-[var(--editor-bg)] text-[var(--editor-text)]">
           {/* Code Area with Synchronized SAP NetWeaver Syntax Rendering (9 cols) */}
-          <div className="lg:col-span-9 flex flex-col border-r border-slate-300 bg-white">
+          <div className="lg:col-span-9 flex flex-col border-r border-[var(--border-subtle)] bg-[var(--editor-bg)]">
             {/* View Switcher: Live Highlighted vs Direct Textarea */}
-            <div className="bg-[#f7f9fb] border-b border-slate-200 px-3 py-1 flex items-center justify-between text-xs select-none">
+            <div className="bg-[var(--bg-card-hover)] border-b border-[var(--border-subtle)] px-3 py-1 flex items-center justify-between text-xs select-none">
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => setEditorMode('visual')}
-                  className={`px-2.5 py-0.5 rounded text-[11px] font-semibold transition-all ${
+                  className={`px-2.5 py-0.5 rounded text-[11px] font-semibold transition-all cursor-pointer ${
                     editorMode === 'visual'
-                      ? 'bg-white text-[#0070f2] border border-slate-300 shadow-2xs font-bold'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-[var(--bg-card)] text-[#0070f2] border border-[var(--border-strong)] shadow-2xs font-bold'
+                      : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                   }`}
                 >
                   Visual NetWeaver (Cores SAP Reais)
@@ -503,24 +502,24 @@ export const AbapEditor: React.FC<AbapEditorProps> = ({
 
                 <button
                   onClick={() => setEditorMode('code')}
-                  className={`px-2.5 py-0.5 rounded text-[11px] font-semibold transition-all ${
+                  className={`px-2.5 py-0.5 rounded text-[11px] font-semibold transition-all cursor-pointer ${
                     editorMode === 'code'
-                      ? 'bg-white text-[#0070f2] border border-slate-300 shadow-2xs font-bold'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-[var(--bg-card)] text-[#0070f2] border border-[var(--border-strong)] shadow-2xs font-bold'
+                      : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                   }`}
                 >
                   Modo Edição Rápida
                 </button>
               </div>
 
-              <div className="text-[11px] text-slate-400 font-mono">
+              <div className="text-[11px] text-[var(--text-muted)] font-mono">
                 Fonte: Consolas / Courier New • {lines.length} linhas
               </div>
             </div>
 
-            {/* Visual NetWeaver Mode (White Background with NetWeaver Colors) */}
+            {/* Visual NetWeaver Mode (Theme-Aware Background with NetWeaver Colors) */}
             {editorMode === 'visual' ? (
-              <div className="flex-1 flex flex-col bg-white overflow-hidden">
+              <div className="flex-1 flex flex-col bg-[var(--editor-bg)] overflow-hidden">
                 <div className="flex-1 overflow-y-auto max-h-[500px] select-text">
                   <table className="w-full border-collapse font-mono text-xs sm:text-sm">
                     <tbody>
@@ -532,17 +531,23 @@ export const AbapEditor: React.FC<AbapEditorProps> = ({
                         return (
                           <tr
                             key={lineNum}
-                            className={`hover:bg-blue-50/30 transition-colors ${
-                              hasError ? 'bg-red-50/50' : ''
+                            className={`hover:bg-blue-500/10 transition-colors ${
+                              hasError ? 'bg-red-500/20' : ''
                             }`}
                           >
-                            {/* Line Number Gutter (Classic SAP Gray #ece9d8) */}
-                            <td className="w-12 py-0.5 px-2 text-right text-slate-500 bg-[#ece9d8] border-r border-slate-300 select-none text-[11px] font-mono">
+                            {/* Line Number Gutter */}
+                            <td 
+                              className="w-12 py-0.5 px-2 text-right border-r border-[var(--border-subtle)] select-none text-[11px] font-mono"
+                              style={{ backgroundColor: 'var(--editor-gutter)', color: 'var(--editor-gutter-text)' }}
+                            >
                               {lineNum}
                             </td>
 
                             {/* Line Content with Token Highlighting */}
-                            <td className="py-0.5 px-3 whitespace-pre text-slate-900 leading-relaxed font-mono">
+                            <td 
+                              className="py-0.5 px-3 whitespace-pre leading-relaxed font-mono"
+                              style={{ color: 'var(--editor-text)' }}
+                            >
                               {tokens.map((token, tIdx) => renderHighlightedToken(token, tIdx, handleAsteriskClick))}
                             </td>
                           </tr>
@@ -553,8 +558,8 @@ export const AbapEditor: React.FC<AbapEditorProps> = ({
                 </div>
 
                 {/* Quick edit inline trigger bar */}
-                <div className="bg-[#f0f4f8] border-t border-slate-200 p-2 flex items-center justify-between text-xs">
-                  <span className="text-slate-500 text-[11px]">
+                <div className="bg-[var(--bg-card-hover)] border-t border-[var(--border-subtle)] p-2 flex items-center justify-between text-xs">
+                  <span className="text-[var(--text-muted)] text-[11px]">
                     Deseja alterar o código fonte?
                   </span>
                   <button
@@ -562,7 +567,7 @@ export const AbapEditor: React.FC<AbapEditorProps> = ({
                       setEditorMode('code');
                       setTimeout(() => textareaRef.current?.focus(), 100);
                     }}
-                    className="px-3 py-1 bg-[#0070f2] text-white rounded text-xs font-semibold hover:bg-blue-600 transition-colors shadow-2xs"
+                    className="px-3 py-1 bg-[#0070f2] text-white rounded text-xs font-semibold hover:bg-blue-600 transition-colors shadow-2xs cursor-pointer"
                   >
                     Abrir Caixa de Edição
                   </button>
@@ -570,10 +575,13 @@ export const AbapEditor: React.FC<AbapEditorProps> = ({
               </div>
             ) : (
               /* Code Editor Input Textarea */
-              <div className="flex-1 flex flex-col bg-white">
+              <div className="flex-1 flex flex-col bg-[var(--editor-bg)]">
                 <div className="flex-1 min-h-[420px] flex">
                   {/* Line numbers for textarea */}
-                  <div className="w-12 py-3 bg-[#ece9d8] border-r border-slate-300 select-none text-right pr-2 font-mono text-xs text-slate-400 space-y-1">
+                  <div 
+                    className="w-12 py-3 border-r border-[var(--border-subtle)] select-none text-right pr-2 font-mono text-xs space-y-1"
+                    style={{ backgroundColor: 'var(--editor-gutter)', color: 'var(--editor-gutter-text)' }}
+                  >
                     {lines.map((_, i) => (
                       <div key={i} className="leading-relaxed">
                         {i + 1}
@@ -589,12 +597,13 @@ export const AbapEditor: React.FC<AbapEditorProps> = ({
                     onClick={handleCursorMove}
                     onKeyUp={handleCursorMove}
                     spellCheck={false}
-                    className="flex-1 min-h-[420px] bg-white text-slate-900 font-mono text-xs sm:text-sm p-3 leading-relaxed resize-none focus:outline-none selection:bg-blue-200 border-none"
+                    style={{ backgroundColor: 'var(--editor-bg)', color: 'var(--editor-text)' }}
+                    className="flex-1 min-h-[420px] font-mono text-xs sm:text-sm p-3 leading-relaxed resize-none focus:outline-none selection:bg-blue-500/30 border-none"
                     placeholder="* Digite seu código ABAP aqui..."
                   />
                 </div>
 
-                <div className="bg-[#f0f4f8] border-t border-slate-200 p-2 flex items-center justify-between text-xs">
+                <div className="bg-[var(--bg-card-hover)] border-t border-[var(--border-subtle)] p-2 flex items-center justify-between text-xs">
                   <span className="text-slate-500 text-[11px]">
                     Edição concluída? Alterne para ver as cores originais do SAP NetWeaver.
                   </span>

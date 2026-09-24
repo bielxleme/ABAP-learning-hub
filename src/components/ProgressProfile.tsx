@@ -20,16 +20,26 @@ import {
   AlertTriangle,
   Mail,
   Lock,
-  ExternalLink
+  ExternalLink,
+  Clock,
+  BrainCircuit,
+  Smile,
+  ShieldAlert,
+  ChevronRight,
+  Swords
 } from 'lucide-react';
-import { UserProfile, UserAnswerHistory, UserErrorRecord } from '../types';
+import { UserProfile, UserAnswerHistory, UserErrorRecord, RpgRace } from '../types';
 import { INITIAL_BADGES } from '../data/sapReference';
 import { ErrorDiagnosticPanel } from './ErrorDiagnosticPanel';
+import { analyzeUserBehavior } from '../utils/userBehaviorAnalyzer';
+import { RPG_RACES, getRpgClassForLevel, ALL_RPG_RACES } from '../data/rpgAvatars';
+import { RpgAvatarRenderer } from './RpgAvatarRenderer';
 
 interface ProgressProfileProps {
   userProfile: UserProfile;
   onUpdateProfileName: (newName: string) => void;
   onEquipTitle?: (title: string | 'auto') => void;
+  onUpdateRpgRace?: (newRace: RpgRace) => void;
   answerHistory: UserAnswerHistory[];
   onResetProgress: () => void;
   onPracticeTopic?: (category: 'SELECT_SQL' | 'INTERNAL_TABLES' | 'PUNCTUATION_PERIOD' | 'DATA_DECLARATION') => void;
@@ -40,15 +50,25 @@ export const ProgressProfile: React.FC<ProgressProfileProps> = ({
   userProfile,
   onUpdateProfileName,
   onEquipTitle,
+  onUpdateRpgRace,
   answerHistory,
   onResetProgress,
   onPracticeTopic,
   onClearResolvedErrors,
 }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'diagnostics' | 'history'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'behavior' | 'rpg' | 'diagnostics' | 'history'>('overview');
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(userProfile.name);
   const [historyFilter, setHistoryFilter] = useState<'all' | 'correct' | 'wrong'>('all');
+
+  const heroRace: RpgRace = userProfile.rpgRace || 'guerreiro';
+  const raceMeta = RPG_RACES[heroRace] || RPG_RACES.guerreiro;
+  const currentHeroClass = getRpgClassForLevel(heroRace, userProfile.level);
+
+  // Behavioral Pattern Analysis
+  const behaviorSummary = useMemo(() => {
+    return analyzeUserBehavior(userProfile, answerHistory, userProfile.errorLogs || []);
+  }, [userProfile, answerHistory]);
 
   const handleSaveName = (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,6 +100,8 @@ export const ProgressProfile: React.FC<ProgressProfileProps> = ({
     if (userProfile.xp >= 500) titlesSet.add('Consultora ABAP Pleno');
     if (userProfile.xp >= 1000) titlesSet.add('Especialista ABAP Sênior');
     if (userProfile.xp >= 1800) titlesSet.add('Arquiteta SAP & Mestre em ABAP');
+    if (userProfile.xp >= 2500) titlesSet.add('Especialista em Formulários & Spool');
+    if (userProfile.xp >= 3200) titlesSet.add('Grã-Mestra em ABAP OO & Design Patterns');
 
     // Badge based unlocked titles
     INITIAL_BADGES.forEach((b) => {
@@ -97,7 +119,7 @@ export const ProgressProfile: React.FC<ProgressProfileProps> = ({
 
   const isAutoTitle = !userProfile.equippedTitle || userProfile.equippedTitle === 'auto';
 
-  // Dynamic Visual Progression by Level (User requested prominent evolution per level)
+  // Dynamic Visual Progression by Level (supports up to Level 7)
   const levelTheme = useMemo(() => {
     switch (userProfile.level) {
       case 1:
@@ -106,7 +128,7 @@ export const ProgressProfile: React.FC<ProgressProfileProps> = ({
           borderClass: 'border border-[#304875] shadow-md',
           badgePill: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40',
           avatarRing: 'bg-gradient-to-tr from-blue-500 to-emerald-400 p-0.5',
-          levelLabel: 'Fundamentos ABAP & NetWeaver',
+          levelLabel: 'Nível 1: Fundamentos ABAP & NetWeaver',
           rankCrest: '🔰',
           glowStyle: '',
         };
@@ -116,7 +138,7 @@ export const ProgressProfile: React.FC<ProgressProfileProps> = ({
           borderClass: 'border-2 border-emerald-400/80 shadow-xl shadow-emerald-500/20 ring-2 ring-emerald-400/30',
           badgePill: 'bg-emerald-400/30 text-emerald-200 border border-emerald-400/70 font-bold',
           avatarRing: 'bg-gradient-to-tr from-emerald-400 via-teal-300 to-cyan-400 p-1 shadow-lg shadow-emerald-500/30',
-          levelLabel: 'Dicionário de Dados SE11 & Open SQL',
+          levelLabel: 'Nível 2: Dicionário de Dados SE11 & Open SQL',
           rankCrest: '🛡️',
           glowStyle: 'relative overflow-hidden before:absolute before:-right-10 before:-top-10 before:w-44 before:h-44 before:bg-emerald-500/15 before:rounded-full before:blur-2xl',
         };
@@ -126,7 +148,7 @@ export const ProgressProfile: React.FC<ProgressProfileProps> = ({
           borderClass: 'border-2 border-amber-400 shadow-2xl shadow-amber-500/30 ring-2 ring-amber-400/50',
           badgePill: 'bg-amber-400/30 text-amber-200 border border-amber-400/80 font-bold text-shadow',
           avatarRing: 'bg-gradient-to-tr from-amber-400 via-yellow-300 to-amber-600 p-1 ring-2 ring-amber-400 shadow-xl shadow-amber-500/40',
-          levelLabel: 'Consultora ABAP Pleno VIP (ITAB & BAPIs)',
+          levelLabel: 'Nível 3: Consultora em ITABs & Loops',
           rankCrest: '👑',
           glowStyle: 'relative overflow-hidden before:absolute before:-right-10 before:-top-10 before:w-56 before:h-56 before:bg-amber-500/20 before:rounded-full before:blur-2xl',
         };
@@ -136,33 +158,53 @@ export const ProgressProfile: React.FC<ProgressProfileProps> = ({
           borderClass: 'border-2 border-fuchsia-400 shadow-2xl shadow-purple-500/40 ring-2 ring-fuchsia-400/60',
           badgePill: 'bg-fuchsia-400/30 text-fuchsia-200 border border-fuchsia-400/80 font-bold',
           avatarRing: 'bg-gradient-to-tr from-purple-400 via-pink-400 to-indigo-400 p-1 ring-2 ring-fuchsia-300 shadow-2xl shadow-purple-500/50',
-          levelLabel: 'Arquiteta ABAP OO & Design Patterns',
+          levelLabel: 'Nível 4: Arquiteta em Modularização & BAPIs',
           rankCrest: '💎',
           glowStyle: 'relative overflow-hidden before:absolute before:-right-10 before:-top-10 before:w-64 before:h-64 before:bg-fuchsia-500/25 before:rounded-full before:blur-3xl',
         };
-      default: // Level 5+
+      case 5:
         return {
           bannerBg: 'bg-gradient-to-r from-[#090714] via-[#261304] to-[#1c0524]',
           borderClass: 'border-2 border-amber-300 shadow-2xl shadow-amber-400/50 ring-4 ring-amber-400/70',
           badgePill: 'bg-gradient-to-r from-amber-400/40 to-yellow-300/40 text-amber-100 border border-amber-300 font-extrabold',
           avatarRing: 'bg-gradient-to-tr from-amber-300 via-yellow-200 to-amber-500 p-1.5 ring-4 ring-amber-300 shadow-2xl shadow-amber-400/60',
-          levelLabel: 'Mestre SAP S/4HANA & ABAP RAP Guru',
+          levelLabel: 'Nível 5: Mestre SAP S/4HANA & Clean ABAP',
           rankCrest: '🏆',
           glowStyle: 'relative overflow-hidden before:absolute before:-right-12 before:-top-12 before:w-80 before:h-80 before:bg-gradient-to-br before:from-amber-500/30 before:to-red-500/20 before:rounded-full before:blur-3xl',
+        };
+      case 6:
+        return {
+          bannerBg: 'bg-gradient-to-r from-[#200511] via-[#4c0519] to-[#1a040b]',
+          borderClass: 'border-2 border-rose-400 shadow-2xl shadow-rose-500/50 ring-4 ring-rose-400/70',
+          badgePill: 'bg-gradient-to-r from-rose-500/40 to-red-400/40 text-rose-100 border border-rose-300 font-extrabold',
+          avatarRing: 'bg-gradient-to-tr from-rose-400 via-pink-300 to-rose-600 p-1.5 ring-4 ring-rose-300 shadow-2xl shadow-rose-500/60',
+          levelLabel: 'Nível 6: Mestra de Formulários & Tradução SE63',
+          rankCrest: '📜',
+          glowStyle: 'relative overflow-hidden before:absolute before:-right-12 before:-top-12 before:w-80 before:h-80 before:bg-gradient-to-br before:from-rose-500/30 before:to-red-600/30 before:rounded-full before:blur-3xl',
+        };
+      default: // Level 7+
+        return {
+          bannerBg: 'bg-gradient-to-r from-[#17092b] via-[#3b0764] to-[#120324]',
+          borderClass: 'border-2 border-purple-300 shadow-2xl shadow-purple-400/60 ring-4 ring-purple-400/80',
+          badgePill: 'bg-gradient-to-r from-purple-400/40 via-pink-400/40 to-yellow-300/40 text-purple-100 border border-purple-300 font-extrabold',
+          avatarRing: 'bg-gradient-to-tr from-purple-300 via-fuchsia-300 to-amber-400 p-1.5 ring-4 ring-purple-300 shadow-2xl shadow-purple-400/70',
+          levelLabel: 'Nível 7: Grã-Mestra Suprema em ABAP OO & Design Patterns',
+          rankCrest: '🧙‍♀️',
+          glowStyle: 'relative overflow-hidden before:absolute before:-right-12 before:-top-12 before:w-80 before:h-80 before:bg-gradient-to-br before:from-purple-500/40 before:to-pink-500/30 before:rounded-full before:blur-3xl',
         };
     }
   }, [userProfile.level]);
 
   return (
     <div className="space-y-6">
-      {/* Top Banner: Dynamic Visual Progression per Level */}
+      {/* Top Banner: Dynamic Visual Progression per Level with RPG Avatar display */}
       <div className={`${levelTheme.bannerBg} ${levelTheme.borderClass} ${levelTheme.glowStyle} text-white rounded-xl p-5 sm:p-6 transition-all duration-300`}>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           {/* User Details */}
           <div className="flex items-center space-x-4">
             <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full ${levelTheme.avatarRing} flex items-center justify-center shrink-0`}>
-              <div className="w-full h-full bg-[#16233d] rounded-full flex items-center justify-center text-2xl sm:text-3xl font-bold text-white shadow-inner">
-                {userProfile.avatar || userProfile.name.charAt(0).toUpperCase()}
+              <div className="w-full h-full bg-[#16233d] rounded-full flex items-center justify-center overflow-hidden shadow-inner">
+                <RpgAvatarRenderer race={heroRace} level={userProfile.level} size="md" />
               </div>
             </div>
 
@@ -193,7 +235,7 @@ export const ProgressProfile: React.FC<ProgressProfileProps> = ({
                     </h2>
                     <button
                       onClick={() => setIsEditingName(true)}
-                      className="text-blue-300 hover:text-white p-1"
+                      className="text-blue-300 hover:text-white p-1 cursor-pointer"
                       title="Editar nome"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
@@ -206,6 +248,11 @@ export const ProgressProfile: React.FC<ProgressProfileProps> = ({
                 <span className={`${levelTheme.badgePill} text-xs px-2.5 py-0.5 rounded-full font-medium flex items-center gap-1`}>
                   <Sparkles className="w-3 h-3 text-amber-300" />
                   {userProfile.rankTitle}
+                </span>
+
+                <span className="text-xs bg-purple-950/70 text-purple-200 border border-purple-500/40 px-2.5 py-0.5 rounded-full font-medium flex items-center gap-1">
+                  <span>{raceMeta.iconEmoji}</span>
+                  <span>Classe: <strong>{currentHeroClass.title}</strong></span>
                 </span>
 
                 <span className="text-blue-200 text-xs flex items-center gap-1 bg-black/20 px-2 py-0.5 rounded-full">
@@ -251,7 +298,7 @@ export const ProgressProfile: React.FC<ProgressProfileProps> = ({
         {/* Level Progression Bar */}
         <div className="mt-5 space-y-1.5 pt-4 border-t border-white/10">
           <div className="flex justify-between text-xs font-semibold text-blue-200">
-            <span>Evolução para Nível {userProfile.level + 1}</span>
+            <span>Evolução para Nível {Math.min(7, userProfile.level + 1)}</span>
             <span>
               {xpInLevel} / {xpNeeded} XP ({Math.round(progressPct)}%)
             </span>
@@ -266,29 +313,56 @@ export const ProgressProfile: React.FC<ProgressProfileProps> = ({
       </div>
 
       {/* Sub Navigation Tabs */}
-      <div className="flex items-center space-x-2 border-b border-slate-200 pb-1 text-xs sm:text-sm font-semibold">
+      <div className="flex items-center space-x-1.5 border-b border-slate-200 pb-1 text-xs sm:text-sm font-semibold overflow-x-auto scrollbar-none">
         <button
           onClick={() => setActiveTab('overview')}
-          className={`px-3 py-2 rounded-t-lg transition-all flex items-center gap-1.5 ${
+          className={`px-3 py-2 rounded-t-lg transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
             activeTab === 'overview'
               ? 'border-b-2 border-[#0070f2] text-[#0070f2] bg-blue-50/50'
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
           <Award className="w-4 h-4" />
-          <span>Visão Geral & Conquistas ({userProfile.badges.length})</span>
+          <span>Visão Geral & Medalhas ({userProfile.badges.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('behavior')}
+          className={`px-3 py-2 rounded-t-lg transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+            activeTab === 'behavior'
+              ? 'border-b-2 border-purple-600 text-purple-700 bg-purple-50/60'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <BrainCircuit className="w-4 h-4 text-purple-600" />
+          <span>Análise Comportamental</span>
+          <span className="bg-purple-100 text-purple-800 text-[10px] font-bold px-1.5 py-0.2 rounded-full">
+            Novo
+          </span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('rpg')}
+          className={`px-3 py-2 rounded-t-lg transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+            activeTab === 'rpg'
+              ? 'border-b-2 border-emerald-600 text-emerald-700 bg-emerald-50/60'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <Swords className="w-4 h-4 text-emerald-600" />
+          <span>Avatar de RPG & Classes</span>
         </button>
 
         <button
           onClick={() => setActiveTab('diagnostics')}
-          className={`px-3 py-2 rounded-t-lg transition-all flex items-center gap-1.5 ${
+          className={`px-3 py-2 rounded-t-lg transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
             activeTab === 'diagnostics'
               ? 'border-b-2 border-amber-500 text-amber-700 bg-amber-50/50'
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
           <AlertTriangle className="w-4 h-4 text-amber-500" />
-          <span>Diagnóstico de Erros & Recuperação</span>
+          <span>Diagnóstico de Erros</span>
           {(userProfile.errorLogs?.length || 0) > 0 && (
             <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-1.5 py-0.2 rounded-full font-mono">
               {userProfile.errorLogs?.length}
@@ -298,20 +372,140 @@ export const ProgressProfile: React.FC<ProgressProfileProps> = ({
 
         <button
           onClick={() => setActiveTab('history')}
-          className={`px-3 py-2 rounded-t-lg transition-all flex items-center gap-1.5 ${
+          className={`px-3 py-2 rounded-t-lg transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
             activeTab === 'history'
               ? 'border-b-2 border-[#0070f2] text-[#0070f2] bg-blue-50/50'
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
           <BookOpen className="w-4 h-4" />
-          <span>Histórico de Respostas ({answerHistory.length})</span>
+          <span>Histórico ({answerHistory.length})</span>
         </button>
       </div>
 
       {/* TAB 1: OVERVIEW & BADGES */}
       {activeTab === 'overview' && (
         <div className="space-y-6">
+          {/* Real-Time Behavioral Pattern Summary (Shown whenever user opens Profile) */}
+          <div className="bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#1e40af] text-white rounded-xl p-5 shadow-lg border border-blue-500/40 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-10 h-10 rounded-lg bg-blue-500/20 border border-blue-400/40 flex items-center justify-center">
+                  <BrainCircuit className="w-5 h-5 text-emerald-300" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-sm sm:text-base text-white">
+                      Diagnóstico Comportamental do Usuário
+                    </h3>
+                    <span className="bg-emerald-400 text-slate-950 text-[10px] font-black px-2 py-0.2 rounded-full uppercase tracking-wider">
+                      Perfil Ativo
+                    </span>
+                  </div>
+                  <p className="text-xs text-blue-200">
+                    Análise em tempo real dos seus padrões de estudo, tempo de resolução e precisão técnica.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('behavior')}
+                className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-blue-100 rounded-lg text-xs font-semibold border border-white/20 transition-all flex items-center gap-1 cursor-pointer"
+              >
+                <span>Ver Métricas Detalhadas</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Humorous & Constructive Feedback Quote */}
+            <div className="bg-black/30 backdrop-blur-xs border border-white/10 rounded-lg p-3.5 flex items-start gap-3">
+              <div className="text-2xl shrink-0 mt-0.5">💬</div>
+              <div className="space-y-1">
+                <div className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                  <span>Feedback do Mentor SAP:</span>
+                </div>
+                <p className="text-xs sm:text-sm text-slate-100 italic leading-relaxed font-sans">
+                  "{behaviorSummary.humorousQuote}"
+                </p>
+                <div className="text-[11px] text-blue-200 pt-0.5 font-medium">
+                  Status Geral: <strong className="text-emerald-300">{behaviorSummary.behavioralVerdict}</strong> • Precisão Global: <strong className="text-yellow-300">{behaviorSummary.overallAccuracy}%</strong>
+                </div>
+              </div>
+            </div>
+
+            {/* Strengths & Constructive Criticisms Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+              {/* Pontos Fortes */}
+              <div className="bg-emerald-950/40 border border-emerald-500/30 rounded-lg p-3 space-y-2">
+                <div className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <span>Onde Você Está Mandando Bem:</span>
+                </div>
+                {behaviorSummary.strengths.length > 0 ? (
+                  <ul className="space-y-1.5 text-xs text-emerald-100">
+                    {behaviorSummary.strengths.map((str, idx) => (
+                      <li key={idx} className="flex items-start gap-1.5">
+                        <span className="text-emerald-400 font-bold shrink-0">•</span>
+                        <span>{str}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-xs text-emerald-200/80">
+                    Resolva mais exercícios de código para destacar suas maiores especialidades!
+                  </p>
+                )}
+              </div>
+
+              {/* Pontos de Atenção & Crítica Construtiva */}
+              <div className="bg-amber-950/40 border border-amber-500/30 rounded-lg p-3 space-y-2">
+                <div className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                  <AlertTriangle className="w-4 h-4 text-amber-400" />
+                  <span>Críticas Construtivas & Atenção:</span>
+                </div>
+                {behaviorSummary.weaknesses.length > 0 ? (
+                  <ul className="space-y-1.5 text-xs text-amber-100">
+                    {behaviorSummary.weaknesses.map((w, idx) => (
+                      <li key={idx} className="flex items-start gap-1.5">
+                        <span className="text-amber-400 font-bold shrink-0">•</span>
+                        <span>{w}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-xs text-amber-200/80">
+                    Nenhuma fraqueza crítica detectada até o momento. Excelente disciplina no código!
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Slowest Topic Notice */}
+            {behaviorSummary.slowestTopic && (
+              <div className="bg-blue-950/50 border border-blue-400/30 rounded-lg p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div className="flex items-center space-x-2">
+                  <Clock className="w-4 h-4 text-sky-300 shrink-0" />
+                  <div>
+                    <span className="font-bold text-sky-200">Tópico mais demorado para aprender: </span>
+                    <span className="text-white font-medium">{behaviorSummary.slowestTopic.categoryLabel}</span>
+                    <span className="text-slate-300 text-[11px] ml-1">
+                      (Média de {behaviorSummary.slowestTopic.averageTimeSeconds}s por resposta)
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => onPracticeTopic && onPracticeTopic('SELECT_SQL')}
+                  className="px-2.5 py-1 bg-sky-500/20 hover:bg-sky-500/30 text-sky-200 border border-sky-400/40 rounded font-semibold text-[11px] transition-colors cursor-pointer"
+                >
+                  Praticar Este Tópico Agora
+                </button>
+              </div>
+            )}
+          </div>
+
           {/* Professional Title Selection Box */}
           <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-5 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
@@ -333,7 +527,7 @@ export const ProgressProfile: React.FC<ProgressProfileProps> = ({
                 <button
                   type="button"
                   onClick={() => onEquipTitle && onEquipTitle('auto')}
-                  className={`text-xs px-2.5 py-1.5 rounded-lg border font-semibold transition-all ${
+                  className={`text-xs px-2.5 py-1.5 rounded-lg border font-semibold transition-all cursor-pointer ${
                     isAutoTitle
                       ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-2xs'
                       : 'border-slate-300 text-slate-600 hover:bg-slate-50'
@@ -352,14 +546,13 @@ export const ProgressProfile: React.FC<ProgressProfileProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                 {availableUnlockedTitles.map((title) => {
                   const isCurrent = userProfile.rankTitle === title;
-                  const isSelected = userProfile.equippedTitle === title;
 
                   return (
                     <button
                       key={title}
                       type="button"
                       onClick={() => onEquipTitle && onEquipTitle(title)}
-                      className={`text-left p-2.5 rounded-lg border text-xs transition-all flex items-center justify-between gap-2 ${
+                      className={`text-left p-2.5 rounded-lg border text-xs transition-all flex items-center justify-between gap-2 cursor-pointer ${
                         isCurrent
                           ? 'bg-blue-50 border-blue-500 shadow-2xs text-blue-900 ring-1 ring-blue-500'
                           : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
@@ -441,7 +634,251 @@ export const ProgressProfile: React.FC<ProgressProfileProps> = ({
         </div>
       )}
 
-      {/* TAB 2: DIAGNOSTICS & RECOVERY */}
+      {/* TAB 2: BEHAVIORAL PATTERN ANALYSIS (Requested by user) */}
+      {activeTab === 'behavior' && (
+        <div className="space-y-5">
+          {/* Main Behavioral Summary Banner */}
+          <div className="bg-gradient-to-r from-purple-900 via-indigo-900 to-[#1b2a4a] text-white p-5 sm:p-6 rounded-xl shadow-lg border border-purple-500/30 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center space-x-3">
+                <div className="w-11 h-11 rounded-xl bg-purple-500/30 border border-purple-400/50 flex items-center justify-center text-purple-200 shadow-xs">
+                  <BrainCircuit className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base sm:text-lg font-bold text-white">
+                      Diagnóstico Comportamental do Usuário
+                    </h3>
+                    <span className="bg-purple-400/30 text-purple-200 text-[10px] font-bold px-2 py-0.5 rounded-full border border-purple-400/40">
+                      Análise Ativa
+                    </span>
+                  </div>
+                  <p className="text-xs text-purple-200">
+                    Aproveitamento Geral: <strong className="text-emerald-300 font-mono text-sm">{behaviorSummary.overallAccuracy}%</strong> • Veredito: <span className="text-amber-300 font-semibold">{behaviorSummary.behavioralVerdict}</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Humorous SAP dev quote */}
+            <div className="bg-black/30 border-l-4 border-purple-400 p-3 rounded-r-lg text-xs italic text-purple-100">
+              {behaviorSummary.humorousQuote}
+            </div>
+
+            {/* Strengths and Constructive Criticisms side-by-side */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              {/* Strengths / Elogios */}
+              <div className="bg-emerald-950/50 border border-emerald-500/40 p-4 rounded-xl space-y-2">
+                <div className="flex items-center space-x-2 text-emerald-300 font-bold text-xs sm:text-sm">
+                  <Sparkles className="w-4 h-4 text-emerald-400" />
+                  <span>Pontos Fortes & Elogios:</span>
+                </div>
+                <div className="space-y-1.5">
+                  {behaviorSummary.strengths.map((st, sIdx) => (
+                    <div key={sIdx} className="text-xs text-emerald-100 flex items-start space-x-2">
+                      <span className="text-emerald-400 font-bold shrink-0">✓</span>
+                      <span className="leading-snug">{st}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Constructive Criticisms / Humor SAP */}
+              <div className="bg-amber-950/50 border border-amber-500/40 p-4 rounded-xl space-y-2">
+                <div className="flex items-center space-x-2 text-amber-300 font-bold text-xs sm:text-sm">
+                  <Smile className="w-4 h-4 text-amber-400" />
+                  <span>Observações & Críticas Construtivas (com humor SAP):</span>
+                </div>
+                <div className="space-y-1.5">
+                  {behaviorSummary.weaknesses.map((wk, wIdx) => (
+                    <div key={wIdx} className="text-xs text-amber-100 flex items-start space-x-2">
+                      <span className="text-amber-400 font-bold shrink-0">⚠️</span>
+                      <span className="leading-snug">{wk}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Slowest topic alert */}
+            {behaviorSummary.slowestTopic && (
+              <div className="bg-blue-950/60 border border-blue-500/40 p-3.5 rounded-xl flex items-start space-x-3 text-xs">
+                <Clock className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <div className="font-bold text-cyan-200">
+                    Tópico que exige mais tempo de dedicação: <span className="text-yellow-300">{behaviorSummary.slowestTopic.categoryLabel}</span>
+                  </div>
+                  <p className="text-blue-100/90 leading-relaxed text-[11px]">
+                    {behaviorSummary.slowestTopic.tip}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Topic Performance Grid */}
+          <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-5 space-y-4">
+            <h4 className="text-sm sm:text-base font-bold text-slate-800 flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-blue-600" />
+              <span>Taxa de Acertos e Tempo Médio por Categoria</span>
+            </h4>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {behaviorSummary.categoryStats.map((cat) => (
+                <div key={cat.categoryKey} className="p-3.5 rounded-lg border border-slate-200 bg-slate-50 space-y-2">
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-800">
+                    <span className="truncate pr-2">{cat.categoryLabel}</span>
+                    <span className={`font-mono ${cat.accuracyRate >= 70 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                      {cat.accuracyRate}%
+                    </span>
+                  </div>
+
+                  {/* Progress bar */}
+                  <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${cat.accuracyRate >= 70 ? 'bg-emerald-500' : cat.accuracyRate >= 50 ? 'bg-amber-500' : 'bg-red-500'}`}
+                      style={{ width: `${cat.accuracyRate}%` }}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] text-slate-500">
+                    <span>{cat.correctCount} acertos em {cat.totalAttempts} tentativas</span>
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-slate-400" />
+                      ~{cat.averageTimeSeconds}s por exercício
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: RPG AVATAR & CLASSES (Requested by user) */}
+      {activeTab === 'rpg' && (
+        <div className="space-y-6">
+          <div className="bg-gradient-to-r from-slate-900 via-[#0f172a] to-[#1e293b] text-white p-5 sm:p-6 rounded-xl shadow-lg border border-slate-700 space-y-5">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+              {/* Full body character display */}
+              <div className="flex flex-col items-center text-center space-y-3">
+                <div className="bg-slate-950/80 p-4 rounded-2xl border-2 border-slate-700 shadow-inner">
+                  <RpgAvatarRenderer race={heroRace} level={userProfile.level} size="full" showWeaponGlow />
+                </div>
+                <div className="space-y-0.5">
+                  <span className="text-xs font-mono uppercase tracking-widest text-amber-400">
+                    {raceMeta.name} • Nível {userProfile.level}
+                  </span>
+                  <h3 className="text-lg font-black text-white">{currentHeroClass.title}</h3>
+                  <div className="text-xs text-emerald-300 font-semibold">
+                    Habilidade: {currentHeroClass.skillName}
+                  </div>
+                </div>
+              </div>
+
+              {/* Race description and Class switch */}
+              <div className="flex-1 space-y-4">
+                <div className="space-y-1">
+                  <span className="text-xs text-cyan-300 uppercase tracking-wider font-bold">
+                    Sobre sua Raça de RPG
+                  </span>
+                  <h4 className="text-xl font-bold text-white flex items-center gap-2">
+                    <span>{raceMeta.iconEmoji}</span>
+                    <span>{raceMeta.name}</span>
+                  </h4>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    {raceMeta.description}
+                  </p>
+                  <p className="text-[11px] text-slate-400 italic pt-1">
+                    {raceMeta.lore}
+                  </p>
+                </div>
+
+                {/* Choose / Switch RPG Race */}
+                <div className="space-y-2 pt-3 border-t border-slate-700">
+                  <label className="text-xs font-bold text-slate-300 block">
+                    Escolher / Mudar Raça do Avatar (Orc, Mago, Guerreiro, Elfo, Arqueiro, Espírito):
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {ALL_RPG_RACES.map((rKey) => {
+                      const rInfo = RPG_RACES[rKey];
+                      const isCurrent = heroRace === rKey;
+
+                      return (
+                        <button
+                          key={rKey}
+                          onClick={() => onUpdateRpgRace && onUpdateRpgRace(rKey)}
+                          className={`p-2.5 rounded-lg border text-xs font-semibold flex items-center space-x-2 transition-all cursor-pointer ${
+                            isCurrent
+                              ? 'bg-blue-600/30 border-blue-400 text-blue-200 ring-2 ring-blue-500/50 shadow-xs'
+                              : 'bg-slate-800/80 border-slate-700 text-slate-300 hover:bg-slate-700'
+                          }`}
+                        >
+                          <span className="text-lg">{rInfo.iconEmoji}</span>
+                          <span className="truncate">{rInfo.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Class progression table across all 7 levels */}
+            <div className="space-y-2 pt-4 border-t border-slate-700">
+              <h4 className="text-xs sm:text-sm font-bold text-amber-300 flex items-center gap-2">
+                <Crown className="w-4 h-4 text-amber-400" />
+                <span>Classes Desbloqueadas por Nível ({raceMeta.name}):</span>
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
+                {[1, 2, 3, 4, 5, 6, 7].map((lvl) => {
+                  const classItem = raceMeta.classesByLevel[lvl];
+                  const isUnlocked = userProfile.level >= lvl;
+                  const isCurrent = userProfile.level === lvl;
+
+                  return (
+                    <div
+                      key={lvl}
+                      className={`p-3 rounded-xl border transition-all text-xs ${
+                        isCurrent
+                          ? 'bg-amber-500/20 border-amber-400 text-white ring-1 ring-amber-400/50'
+                          : isUnlocked
+                          ? 'bg-slate-800/80 border-slate-700 text-slate-200'
+                          : 'bg-slate-900/40 border-slate-800 text-slate-500 opacity-60'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between font-bold mb-1">
+                        <span className="text-[10px] uppercase font-mono text-cyan-300">
+                          Nível {lvl}
+                        </span>
+                        {isCurrent ? (
+                          <span className="text-[9px] bg-amber-400 text-slate-950 font-black px-1.5 py-0.2 rounded-full">
+                            Equipado
+                          </span>
+                        ) : isUnlocked ? (
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                        ) : (
+                          <Lock className="w-3.5 h-3.5 text-slate-600" />
+                        )}
+                      </div>
+                      <div className="font-bold text-xs truncate text-white">{classItem.title}</div>
+                      <div className="text-[10px] text-amber-200 font-mono mt-0.5 truncate">
+                        ⚔️ {classItem.skillName}
+                      </div>
+                      <p className="text-[10px] text-slate-400 mt-1 line-clamp-2">
+                        {classItem.description}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: DIAGNOSTICS & RECOVERY */}
       {activeTab === 'diagnostics' && (
         <ErrorDiagnosticPanel
           errorLogs={userProfile.errorLogs || []}
@@ -451,7 +888,7 @@ export const ProgressProfile: React.FC<ProgressProfileProps> = ({
         />
       )}
 
-      {/* TAB 3: HISTORY */}
+      {/* TAB 5: HISTORY */}
       {activeTab === 'history' && (
         <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-5 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
@@ -462,19 +899,19 @@ export const ProgressProfile: React.FC<ProgressProfileProps> = ({
             <div className="flex items-center space-x-1.5 text-xs">
               <button
                 onClick={() => setHistoryFilter('all')}
-                className={`px-2.5 py-1 rounded ${historyFilter === 'all' ? 'bg-slate-800 text-white font-bold' : 'text-slate-600 hover:bg-slate-100'}`}
+                className={`px-2.5 py-1 rounded cursor-pointer ${historyFilter === 'all' ? 'bg-slate-800 text-white font-bold' : 'text-slate-600 hover:bg-slate-100'}`}
               >
                 Todas ({answerHistory.length})
               </button>
               <button
                 onClick={() => setHistoryFilter('correct')}
-                className={`px-2.5 py-1 rounded ${historyFilter === 'correct' ? 'bg-emerald-600 text-white font-bold' : 'text-slate-600 hover:bg-slate-100'}`}
+                className={`px-2.5 py-1 rounded cursor-pointer ${historyFilter === 'correct' ? 'bg-emerald-600 text-white font-bold' : 'text-slate-600 hover:bg-slate-100'}`}
               >
                 Acertos ({answerHistory.filter((a) => a.isCorrect).length})
               </button>
               <button
                 onClick={() => setHistoryFilter('wrong')}
-                className={`px-2.5 py-1 rounded ${historyFilter === 'wrong' ? 'bg-red-600 text-white font-bold' : 'text-slate-600 hover:bg-slate-100'}`}
+                className={`px-2.5 py-1 rounded cursor-pointer ${historyFilter === 'wrong' ? 'bg-red-600 text-white font-bold' : 'text-slate-600 hover:bg-slate-100'}`}
               >
                 Erros ({answerHistory.filter((a) => !a.isCorrect).length})
               </button>
@@ -528,7 +965,7 @@ export const ProgressProfile: React.FC<ProgressProfileProps> = ({
               onResetProgress();
             }
           }}
-          className="text-xs text-red-600 hover:text-red-700 hover:underline flex items-center gap-1"
+          className="text-xs text-red-600 hover:text-red-700 hover:underline flex items-center gap-1 cursor-pointer"
         >
           <RotateCcw className="w-3.5 h-3.5" />
           <span>Reiniciar Todo o Progresso Deste Usuário</span>

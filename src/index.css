@@ -1,1 +1,92 @@
 @import "tailwindcss";
+
+/* CSS Variables for Global Light and Dark Themes */
+:root {
+  --bg-app: #f3f5f8;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f8fafc;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --border-subtle: #e2e8f0;
+  --border-strong: #cbd5e1;
+  
+  /* ABAP Editor Theme Variables */
+  --editor-bg: #ffffff;
+  --editor-text: #0f172a;
+  --editor-gutter: #ece9d8;
+  --editor-gutter-text: #64748b;
+  --editor-border: #cbd5e1;
+  
+  /* Syntax Highlighting Colors */
+  --syntax-keyword: #0000ff;
+  --syntax-string: #008000;
+  --syntax-number: #008080;
+  --syntax-comment: #707070;
+  --syntax-operator: #1e293b;
+  --syntax-identifier: #0f172a;
+}
+
+[data-theme="dark"], .dark {
+  --bg-app: #0b132b;
+  --bg-card: #131f37;
+  --bg-card-hover: #192947;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --border-subtle: #24375b;
+  --border-strong: #334e80;
+  
+  /* ABAP Editor Theme Variables (Dark Mode) */
+  --editor-bg: #0d1527;
+  --editor-text: #f1f5f9;
+  --editor-gutter: #172440;
+  --editor-gutter-text: #94a3b8;
+  --editor-border: #24375b;
+  
+  /* Syntax Highlighting Colors (High Contrast in Dark Mode) */
+  --syntax-keyword: #60a5fa;
+  --syntax-string: #34d399;
+  --syntax-number: #2dd4bf;
+  --syntax-comment: #94a3b8;
+  --syntax-operator: #cbd5e1;
+  --syntax-identifier: #f1f5f9;
+}
+
+/* Global autosize & overflow lock to prevent lateral drag showing white sidebar on mobile */
+html,
+body {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden !important;
+  overscroll-behavior-x: none;
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  -webkit-text-size-adjust: 100%;
+  touch-action: pan-y pinch-zoom;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+#root {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden !important;
+  overscroll-behavior-x: none;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Ensure code editors and pre tags wrap cleanly without causing horizontal blowout */
+pre, code {
+  max-width: 100%;
+  word-break: break-word;
+}
+
+/* Responsive typography refinement for mobile readability */
+@media (max-width: 640px) {
+  body {
+    font-size: 15.5px;
+    line-height: 1.55;
+  }
+}

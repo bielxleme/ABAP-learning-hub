@@ -1,4 +1,4 @@
-export type QuizDifficulty = 'Nível 1' | 'Nível 2' | 'Nível 3' | 'Nível 4' | 'Nível 5';
+export type QuizDifficulty = 'Nível 1' | 'Nível 2' | 'Nível 3' | 'Nível 4' | 'Nível 5' | 'Nível 6' | 'Nível 7';
 export type QuestionType = 'multiple_choice' | 'code_exercise' | 'theory';
 
 export interface QuizQuestion {
@@ -30,6 +30,7 @@ export interface UserAnswerHistory {
   userAnswer: string;
   date: string;
   feedback: string;
+  timeSpentSeconds?: number;
 }
 
 export interface Badge {
@@ -80,9 +81,15 @@ export interface LabExercise {
   xpReward: number;
 }
 
+export type RpgRace = 'orc' | 'mago' | 'guerreiro' | 'elfo' | 'arqueiro' | 'espirito';
+
 export interface UserProfile {
   name: string;
   avatar: string;
+  rpgRace?: RpgRace;
+  rpgGender?: 'masculino' | 'feminino';
+  unlockedRpgClasses?: string[];
+  equippedRpgClass?: string;
   email?: string;
   googleLinked?: boolean;
   password?: string; // Optional user password for secure logon
@@ -98,6 +105,9 @@ export interface UserProfile {
   simuladosHistory?: SimuladoResult[];
   errorLogs?: UserErrorRecord[];
   soundEnabled: boolean;
+  isGuest?: boolean;
+  lastExerciseDate?: string; // YYYY-MM-DD
+  dailyStreakBonusClaimedDate?: string; // YYYY-MM-DD
 }
 
 export interface AbapSyntaxError {
@@ -170,3 +180,27 @@ export interface ChatMessage {
   timestamp: string;
   codeReference?: string;
 }
+
+export interface ObsoleteCommandInfo {
+  command: string;
+  title: string;
+  description: string;
+  modernAlternative: string;
+  exampleCode: string;
+}
+
+export interface VersionNoticeInfo {
+  version: string;
+  feature: string;
+  message: string;
+}
+
+export interface CodeEvaluationResult {
+  passed: boolean;
+  errorMessage?: string;
+  missingToken?: string;
+  obsoleteCommands: ObsoleteCommandInfo[];
+  versionNotices: VersionNoticeInfo[];
+  detectedFeatures: string[];
+}
+

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { Play, Terminal, HelpCircle, Code2, Bot, Award, Sparkles, BookOpen, Bug, LogIn } from 'lucide-react';
-import { UserProfile, UserAnswerHistory, SimulationResult, SimuladoResult, UserErrorRecord } from './types';
+import { UserProfile, UserAnswerHistory, SimulationResult, SimuladoResult, UserErrorRecord, RpgRace } from './types';
 import { INITIAL_BADGES, INITIAL_ABAP_CODE } from './data/sapReference';
+import { RPG_RACES } from './data/rpgAvatars';
 import { Header } from './components/Header';
 import { AbapEditor } from './components/AbapEditor';
 import { AbapSimulator } from './components/AbapSimulator';
@@ -14,6 +15,9 @@ import { SapLogonModal } from './components/SapLogonModal';
 import { AbapGlossaryOverlay } from './components/AbapGlossaryOverlay';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { AppUpdateToast } from './components/AppUpdateToast';
+import { MobileBottomNav } from './components/MobileBottomNav';
+import { StreakRewardToast } from './components/StreakRewardToast';
+import { processDailyExerciseReward } from './utils/dailyStreakTracker';
 import { simulateAbapExecution } from './utils/abapLinter';
 import { sounds } from './utils/soundEffects';
 
@@ -39,7 +43,41 @@ export default function App() {
     return true;
   });
 
-  // Current User Profile State
+  // Theme state persisted in localStorage & synchronized with CSS variables
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('sap_abap_theme');
+      if (saved === 'dark' || saved === 'light') return saved;
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    return 'light';
+  });
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+        document.documentElement.setAttribute('data-theme', 'dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+      localStorage.setItem('sap_abap_theme', theme);
+    }
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
+  // Streak Reward Toast State
+  const [streakToast, setStreakToast] = useState<{
+    message: string | null;
+    bonusXp: number;
+    streakDays: number;
+  }>({ message: null, bonusXp: 0, streakDays: 1 });
+
+  // Current User Profile State - Defaults to Convidado (Guest) as requested
   const [userProfile, setUserProfile] = useState<UserProfile>(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -53,24 +91,40 @@ export default function App() {
       }
     }
     return {
-      name: 'BLEME',
-      avatar: '👩‍💻',
-      xp: 150,
+      name: 'Convidado SAP',
+      avatar: '👤',
+      rpgRace: 'guerreiro',
+      xp: 0,
       level: 1,
-      rankTitle: 'Estagiária ABAP (SE38)',
-      streakDays: 2,
+      rankTitle: 'Visitante NetWeaver (Convidado)',
+      streakDays: 1,
       lastActiveDate: new Date().toISOString(),
       completedQuestionIds: [],
-      badges: ['badge_first_step'],
+      badges: [],
       soundEnabled: true,
+      isGuest: true,
     };
   });
+
+  // Evaluate Daily Exercise Streak Bonus
+  const evaluateDailyStreak = () => {
+    const result = processDailyExerciseReward(userProfile);
+    if (result.awardedBonusXp > 0) {
+      setUserProfile(result.updatedProfile);
+      setStreakToast({
+        message: result.toastMessage,
+        bonusXp: result.awardedBonusXp,
+        streakDays: result.streakDays,
+      });
+      if (userProfile.soundEnabled) sounds.playLevelUp();
+    }
+  };
 
   // Individual Answer History State for the active user
   const [answerHistory, setAnswerHistory] = useState<UserAnswerHistory[]>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const activeUser = localStorage.getItem(STORAGE_ACTIVE_USER_KEY) || 'BLEME';
+        const activeUser = localStorage.getItem(STORAGE_ACTIVE_USER_KEY) || 'Convidado SAP';
         const saved = localStorage.getItem(`sap_abap_user_${activeUser}_history`);
         if (saved) return JSON.parse(saved);
       } catch (e) {
@@ -136,11 +190,21 @@ export default function App() {
 
   // Dynamic Rank Title calculation
   const calculateRankTitle = (xp: number): { title: string; level: number } => {
-    if (xp >= 1800) return { title: 'Arquiteta SAP & Mestre em ABAP', level: 3 };
-    if (xp >= 1000) return { title: 'Especialista ABAP Sênior', level: 3 };
-    if (xp >= 500) return { title: 'Consultora ABAP Pleno', level: 2 };
+    if (xp >= 3200) return { title: 'Grã-Mestra em ABAP OO & Design Patterns', level: 7 };
+    if (xp >= 2500) return { title: 'Especialista em Formulários & Internacionalização', level: 6 };
+    if (xp >= 1800) return { title: 'Arquiteta SAP & Mestre em ABAP', level: 5 };
+    if (xp >= 1000) return { title: 'Especialista ABAP Sênior', level: 4 };
+    if (xp >= 500) return { title: 'Consultora ABAP Pleno', level: 3 };
     if (xp >= 200) return { title: 'Desenvolvedora ABAP Júnior', level: 2 };
     return { title: 'Estagiária ABAP (SE38)', level: 1 };
+  };
+
+  const handleUpdateRpgRace = (newRace: RpgRace) => {
+    setUserProfile((prev) => ({
+      ...prev,
+      rpgRace: newRace,
+      avatar: RPG_RACES[newRace]?.iconEmoji || prev.avatar,
+    }));
   };
 
   const handleEquipTitle = (title: string | 'auto') => {
@@ -199,6 +263,7 @@ export default function App() {
 
     if (res.success) {
       if (userProfile.soundEnabled) sounds.playSuccess();
+      evaluateDailyStreak();
       const nextCount = successfulSimulationsCount + 1;
       setSuccessfulSimulationsCount(nextCount);
       if (nextCount >= 3) {
@@ -219,6 +284,7 @@ export default function App() {
     setAnswerHistory((prev) => [historyItem, ...prev]);
 
     if (historyItem.isCorrect) {
+      evaluateDailyStreak();
       const nextConsecutive = consecutiveCorrect + 1;
       setConsecutiveCorrect(nextConsecutive);
       if (nextConsecutive >= 5) {
@@ -364,16 +430,17 @@ export default function App() {
       localStorage.removeItem(`sap_abap_user_${userProfile.name}_code`);
     }
     setUserProfile({
-      name: userProfile.name || 'BLEME',
-      avatar: userProfile.avatar || '👩‍💻',
+      name: userProfile.name || 'Convidado SAP',
+      avatar: userProfile.avatar || '👤',
       xp: 0,
       level: 1,
-      rankTitle: 'Estagiária ABAP (SE38)',
+      rankTitle: userProfile.isGuest ? 'Visitante NetWeaver (Convidado)' : 'Estagiária ABAP (SE38)',
       streakDays: 1,
       lastActiveDate: new Date().toISOString(),
       completedQuestionIds: [],
-      badges: ['badge_first_step'],
+      badges: [],
       soundEnabled: true,
+      isGuest: userProfile.isGuest ?? true,
     });
     setAnswerHistory([]);
     setCurrentCode(INITIAL_ABAP_CODE);
@@ -382,7 +449,15 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f3f5f8] text-slate-800 flex flex-col font-sans">
+    <div className="min-h-screen bg-[var(--bg-app)] text-[var(--text-main)] flex flex-col font-sans w-full max-w-full overflow-x-hidden transition-colors duration-200">
+      {/* Daily Consecutive Login/Exercise Streak Reward Toast */}
+      <StreakRewardToast
+        message={streakToast.message}
+        bonusXp={streakToast.bonusXp}
+        streakDays={streakToast.streakDays}
+        onDismiss={() => setStreakToast({ message: null, bonusXp: 0, streakDays: 1 })}
+      />
+
       {/* SAP Logon Modal: Shown first or when user requests to switch accounts */}
       <SapLogonModal
         isOpen={isLogonOpen}
@@ -392,7 +467,7 @@ export default function App() {
         onClose={() => setIsLogonOpen(false)}
       />
 
-      {/* Top SAP Header */}
+      {/* Top SAP Header with Global Theme Switcher & User Status */}
       <Header
         activeTab={activeTab}
         setActiveTab={setActiveTab as any}
@@ -403,10 +478,27 @@ export default function App() {
           setGlossaryOverlayInitialTerm('SELECT');
           setIsGlossaryOverlayOpen(true);
         }}
+        theme={theme}
+        toggleTheme={toggleTheme}
       />
 
       {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 lg:p-8 space-y-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 lg:p-8 space-y-5 pb-24 md:pb-8 max-w-full overflow-x-hidden">
+        {/* Mobile Instructional Quick Guide ("Onde ir agora" - Claro e sem confusão de botões) */}
+        <div className="md:hidden bg-gradient-to-r from-blue-900 to-[#1b2a4a] text-white p-3 rounded-lg shadow-sm border border-blue-700/50 flex items-center justify-between gap-2 text-xs">
+          <div className="flex items-center space-x-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+            <div>
+              <span className="font-bold text-amber-300">O que fazer agora: </span>
+              {activeTab === 'quiz' && 'Escolha um desafio ou laboratório abaixo e clique em "Verificar Código".'}
+              {activeTab === 'editor' && 'Escreva seu programa ABAP e clique em "Executar (F8)".'}
+              {activeTab === 'chat' && 'Tire dúvidas conceituais com o SAP Mentor IA.'}
+              {activeTab === 'progress' && 'Acompanhe seu nível, medalhas e gráfico de erros.'}
+              {activeTab === 'reference' && 'Consulte tabelas e comandos da SE11.'}
+            </div>
+          </div>
+        </div>
+
         {/* Tab 1: Quizzes & Desafios de Código (FOCO PRINCIPAL DE APRENDIZADO) */}
         {activeTab === 'quiz' && (
           <div className="space-y-4">
@@ -455,6 +547,7 @@ export default function App() {
               answerHistory={answerHistory}
               onRecordError={handleRecordError}
               soundEnabled={userProfile.soundEnabled}
+              userProfile={userProfile}
             />
           </div>
         )}
@@ -493,6 +586,7 @@ export default function App() {
             userProfile={userProfile}
             onUpdateProfileName={handleUpdateProfileName}
             onEquipTitle={handleEquipTitle}
+            onUpdateRpgRace={handleUpdateRpgRace}
             answerHistory={answerHistory}
             onResetProgress={handleResetProgress}
             onPracticeTopic={() => {
@@ -550,6 +644,12 @@ export default function App() {
           </div>
         </div>
       </footer>
+      {/* Mobile Fixed Bottom Navigation Bar */}
+      <MobileBottomNav
+        activeTab={activeTab}
+        setActiveTab={setActiveTab as any}
+        badgeCount={userProfile.badges.length}
+      />
     </div>
   );
 }

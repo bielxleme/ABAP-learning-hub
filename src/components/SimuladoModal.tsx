@@ -10,12 +10,14 @@ import {
   RotateCcw, 
   Sparkles, 
   Check, 
-  X 
+  X,
+  Swords
 } from 'lucide-react';
 import { QuizDifficulty, QuizQuestion, SimuladoResult, UserProfile } from '../types';
 import { ABAP_LEVELS } from '../data/abapLevels';
 import { QUIZ_QUESTIONS } from '../data/quizData';
 import { sounds } from '../utils/soundEffects';
+import { RpgBossBattleModal } from './RpgBossBattleModal';
 
 interface SimuladoModalProps {
   level: QuizDifficulty;
@@ -23,6 +25,7 @@ interface SimuladoModalProps {
   onClose: () => void;
   onSimuladoCompleted: (result: SimuladoResult) => void;
   soundEnabled: boolean;
+  userProfile?: UserProfile;
 }
 
 export const SimuladoModal: React.FC<SimuladoModalProps> = ({
@@ -31,6 +34,7 @@ export const SimuladoModal: React.FC<SimuladoModalProps> = ({
   onClose,
   onSimuladoCompleted,
   soundEnabled,
+  userProfile,
 }) => {
   const levelMeta = useMemo(() => {
     return ABAP_LEVELS.find((l) => l.id === level) || ABAP_LEVELS[0];
@@ -49,6 +53,9 @@ export const SimuladoModal: React.FC<SimuladoModalProps> = ({
   const [selectedAnswers, setSelectedAnswers] = useState<{ [qId: string]: number | string }>({});
   const [isFinished, setIsFinished] = useState(false);
   const [finalResult, setFinalResult] = useState<SimuladoResult | null>(null);
+
+  // Boss Battle Animation Modal state
+  const [isBossBattleOpen, setIsBossBattleOpen] = useState(false);
 
   if (!isOpen) return null;
 
@@ -106,6 +113,11 @@ export const SimuladoModal: React.FC<SimuladoModalProps> = ({
     }
 
     onSimuladoCompleted(res);
+
+    // Automatically trigger the RPG Boss Battle animation so the user experiences the combat!
+    setTimeout(() => {
+      setIsBossBattleOpen(true);
+    }, 400);
   };
 
   const handleRestart = () => {
@@ -113,222 +125,265 @@ export const SimuladoModal: React.FC<SimuladoModalProps> = ({
     setSelectedAnswers({});
     setIsFinished(false);
     setFinalResult(null);
+    setIsBossBattleOpen(false);
   };
 
   const answeredCount = Object.keys(selectedAnswers).length;
 
+  const fallbackProfile: UserProfile = userProfile || {
+    name: 'BLEME',
+    avatar: '👩‍💻',
+    rpgRace: 'guerreiro',
+    xp: 200,
+    level: levelMeta.number,
+    rankTitle: 'Desenvolvedora ABAP',
+    streakDays: 1,
+    lastActiveDate: new Date().toISOString(),
+    completedQuestionIds: [],
+    badges: [],
+    soundEnabled: true,
+  };
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
-      <div className="bg-white rounded-xl shadow-2xl border-2 border-slate-700 w-full max-w-3xl overflow-hidden flex flex-col max-h-[92vh]">
-        {/* Top Header */}
-        <div className="bg-[#1b2a4a] text-white px-5 py-3.5 flex items-center justify-between border-b border-[#304875]">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 rounded-lg bg-[#0070f2] flex items-center justify-center text-white shadow-xs">
-              <Award className="w-5 h-5" />
+    <>
+      <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+        <div className="bg-white rounded-xl shadow-2xl border-2 border-slate-700 w-full max-w-3xl overflow-hidden flex flex-col max-h-[92vh]">
+          {/* Top Header */}
+          <div className="bg-[#1b2a4a] text-white px-5 py-3.5 flex items-center justify-between border-b border-[#304875]">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 rounded-lg bg-[#0070f2] flex items-center justify-center text-white shadow-xs">
+                <Award className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-sm sm:text-base font-bold text-white">
+                  {levelMeta.simuladoTitle}
+                </h2>
+                <span className="text-xs text-blue-200">
+                  Avaliação de Certificação SAP • Nota de Corte: {levelMeta.passingScore}% • Chefão: <strong>{levelMeta.boss.name}</strong>
+                </span>
+              </div>
             </div>
-            <div>
-              <h2 className="text-sm sm:text-base font-bold text-white">
-                {levelMeta.simuladoTitle}
-              </h2>
-              <span className="text-xs text-blue-200">
-                Avaliação de Certificação SAP • Nota de Corte: {levelMeta.passingScore}%
-              </span>
-            </div>
+
+            <button
+              onClick={onClose}
+              className="p-1.5 text-slate-300 hover:text-white hover:bg-white/10 rounded-md transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-1.5 text-slate-300 hover:text-white hover:bg-white/10 rounded-md transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+          {/* Content Body */}
+          <div className="p-5 sm:p-6 overflow-y-auto flex-1 space-y-5">
+            {!isFinished ? (
+              <>
+                {/* Progress and status */}
+                <div className="flex items-center justify-between text-xs text-slate-600 bg-slate-100 p-2.5 rounded-lg border border-slate-200">
+                  <span className="font-bold text-slate-800">
+                    Questão {currentIndex + 1} de {simuladoQuestions.length}
+                  </span>
+                  <span className="text-slate-500">
+                    Respondidas: {answeredCount} de {simuladoQuestions.length}
+                  </span>
+                </div>
 
-        {/* Content Body */}
-        <div className="p-5 sm:p-6 overflow-y-auto flex-1 space-y-5">
-          {!isFinished ? (
-            <>
-              {/* Progress and status */}
-              <div className="flex items-center justify-between text-xs text-slate-600 bg-slate-100 p-2.5 rounded-lg border border-slate-200">
-                <span className="font-bold text-slate-800">
-                  Questão {currentIndex + 1} de {simuladoQuestions.length}
-                </span>
-                <span className="text-slate-500">
-                  Respondidas: {answeredCount} de {simuladoQuestions.length}
-                </span>
-              </div>
+                {/* Question Card */}
+                {currentQ && (
+                  <div className="space-y-4">
+                    <div className="space-y-1.5">
+                      <span className="text-[11px] font-bold text-[#0070f2] uppercase tracking-wider bg-blue-50 px-2 py-0.5 rounded">
+                        {currentQ.conceptTag}
+                      </span>
+                      <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-snug">
+                        {currentQ.title}
+                      </h3>
+                      <p className="text-sm sm:text-[15px] text-slate-700 leading-relaxed">
+                        {currentQ.question}
+                      </p>
+                    </div>
 
-              {/* Question Card */}
-              {currentQ && (
-                <div className="space-y-4">
-                  <div className="space-y-1.5">
-                    <span className="text-[11px] font-bold text-[#0070f2] uppercase tracking-wider bg-blue-50 px-2 py-0.5 rounded">
-                      {currentQ.conceptTag}
-                    </span>
-                    <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-snug">
-                      {currentQ.title}
-                    </h3>
-                    <p className="text-sm text-slate-700 leading-relaxed">
-                      {currentQ.question}
-                    </p>
-                  </div>
+                    {/* Options */}
+                    {currentQ.options && (
+                      <div className="space-y-2 pt-2">
+                        {currentQ.options.map((opt, oIdx) => {
+                          const isSelected = selectedAnswers[currentQ.id] === oIdx;
 
-                  {/* Options */}
-                  {currentQ.options && (
-                    <div className="space-y-2 pt-2">
-                      {currentQ.options.map((opt, oIdx) => {
-                        const isSelected = selectedAnswers[currentQ.id] === oIdx;
-
-                        return (
-                          <button
-                            key={oIdx}
-                            onClick={() => handleSelectOption(oIdx)}
-                            className={`w-full text-left p-3.5 rounded-lg border text-xs sm:text-sm font-medium transition-all flex items-start space-x-3 cursor-pointer ${
-                              isSelected
-                                ? 'bg-blue-50 border-[#0070f2] text-blue-950 font-bold ring-2 ring-[#0070f2]/30 shadow-xs'
-                                : 'bg-white hover:bg-slate-50 border-slate-300 text-slate-800'
-                            }`}
-                          >
-                            <span
-                              className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
+                          return (
+                            <button
+                              key={oIdx}
+                              onClick={() => handleSelectOption(oIdx)}
+                              className={`w-full text-left p-3.5 rounded-lg border text-xs sm:text-sm font-medium transition-all flex items-start space-x-3 cursor-pointer ${
                                 isSelected
-                                  ? 'bg-[#0070f2] text-white'
-                                  : 'bg-slate-200 text-slate-700'
+                                  ? 'bg-blue-50 border-[#0070f2] text-blue-950 font-bold ring-2 ring-[#0070f2]/30 shadow-xs'
+                                  : 'bg-white hover:bg-slate-50 border-slate-300 text-slate-800'
                               }`}
                             >
-                              {String.fromCharCode(65 + oIdx)}
-                            </span>
-                            <span className="flex-1 leading-snug">{opt}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
+                              <span
+                                className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
+                                  isSelected
+                                    ? 'bg-[#0070f2] text-white'
+                                    : 'bg-slate-200 text-slate-700'
+                                }`}
+                              >
+                                {String.fromCharCode(65 + oIdx)}
+                              </span>
+                              <span className="flex-1 leading-snug">{opt}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
 
-                  {/* Code question */}
-                  {currentQ.type === 'code_exercise' && (
-                    <div className="space-y-2 pt-2">
-                      <label className="text-xs font-bold text-slate-700 block">
-                        Digite sua solução ABAP:
-                      </label>
-                      <textarea
-                        rows={4}
-                        value={String(selectedAnswers[currentQ.id] || '')}
-                        onChange={(e) =>
-                          setSelectedAnswers((prev) => ({
-                            ...prev,
-                            [currentQ.id]: e.target.value,
-                          }))
-                        }
-                        placeholder={currentQ.codeSnippet || 'Escreva o comando ABAP aqui...'}
-                        className="w-full font-mono text-xs sm:text-sm p-3 bg-slate-900 text-emerald-300 rounded-lg border border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
+                    {/* Code question */}
+                    {currentQ.type === 'code_exercise' && (
+                      <div className="space-y-2 pt-2">
+                        <label className="text-xs font-bold text-slate-700 block">
+                          Digite sua solução ABAP:
+                        </label>
+                        <textarea
+                          rows={4}
+                          value={String(selectedAnswers[currentQ.id] || '')}
+                          onChange={(e) =>
+                            setSelectedAnswers((prev) => ({
+                              ...prev,
+                              [currentQ.id]: e.target.value,
+                            }))
+                          }
+                          placeholder={currentQ.codeSnippet || 'Escreva o comando ABAP aqui...'}
+                          className="w-full font-mono text-xs sm:text-sm p-3 bg-slate-900 text-emerald-300 rounded-lg border border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            ) : (
+              /* Result Screen */
+              <div className="text-center py-6 space-y-5 animate-in fade-in duration-300">
+                <div
+                  className={`w-20 h-20 rounded-full mx-auto flex items-center justify-center shadow-lg ${
+                    finalResult?.passed
+                      ? 'bg-emerald-100 text-emerald-600 border-4 border-emerald-500'
+                      : 'bg-amber-100 text-amber-600 border-4 border-amber-500'
+                  }`}
+                >
+                  {finalResult?.passed ? (
+                    <Award className="w-10 h-10" />
+                  ) : (
+                    <AlertCircle className="w-10 h-10" />
                   )}
                 </div>
-              )}
-            </>
-          ) : (
-            /* Result Screen */
-            <div className="text-center py-6 space-y-5 animate-in fade-in duration-300">
-              <div
-                className={`w-20 h-20 rounded-full mx-auto flex items-center justify-center shadow-lg ${
-                  finalResult?.passed
-                    ? 'bg-emerald-100 text-emerald-600 border-4 border-emerald-500'
-                    : 'bg-amber-100 text-amber-600 border-4 border-amber-500'
-                }`}
-              >
-                {finalResult?.passed ? (
-                  <Award className="w-10 h-10" />
-                ) : (
-                  <AlertCircle className="w-10 h-10" />
-                )}
-              </div>
 
-              <div className="space-y-1.5">
-                <h3 className="text-xl sm:text-2xl font-black text-slate-900">
-                  {finalResult?.passed ? 'Parabéns! Você foi Aprovada!' : 'Não foi dessa vez, continue praticando!'}
-                </h3>
-                <p className="text-sm text-slate-600 max-w-md mx-auto">
-                  {finalResult?.passed
-                    ? `Você atingiu ${finalResult.percentage}% de aproveitamento (acertou ${finalResult.score} de ${finalResult.totalQuestions} questões). Seu título e badge oficial foram desbloqueados!`
-                    : `Você obteve ${finalResult?.percentage}%. A nota de corte mínima é ${levelMeta.passingScore}%. Revise os conceitos do nível e tente novamente!`}
-                </p>
-              </div>
-
-              {/* Reward Banner if passed */}
-              {finalResult?.passed && (
-                <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-300 rounded-xl p-4 max-w-md mx-auto text-left shadow-sm space-y-2">
-                  <div className="flex items-center space-x-2 text-amber-900 font-bold text-xs">
-                    <Sparkles className="w-4 h-4 text-amber-600" />
-                    <span>Recompensas de Carreira Desbloqueadas:</span>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="text-xs text-slate-700">
-                      • <strong>Novo Título:</strong> <span className="text-[#0070f2] font-bold">{levelMeta.titleReward}</span>
-                    </div>
-                    <div className="text-xs text-slate-700">
-                      • <strong>Badge Oficial:</strong> Certificação de {levelMeta.title}
-                    </div>
-                  </div>
+                <div className="space-y-1.5">
+                  <h3 className="text-xl sm:text-2xl font-black text-slate-900">
+                    {finalResult?.passed ? 'Parabéns! Você foi Aprovada!' : 'Não foi dessa vez, continue praticando!'}
+                  </h3>
+                  <p className="text-sm text-slate-600 max-w-md mx-auto">
+                    {finalResult?.passed
+                      ? `Você atingiu ${finalResult.percentage}% de aproveitamento (acertou ${finalResult.score} de ${finalResult.totalQuestions} questões). Seu título e badge oficial foram desbloqueados!`
+                      : `Você obteve ${finalResult?.percentage}%. A nota de corte mínima é ${levelMeta.passingScore}%. Revise os conceitos do nível e tente novamente!`}
+                  </p>
                 </div>
-              )}
-            </div>
-          )}
-        </div>
 
-        {/* Bottom Actions Bar */}
-        <div className="bg-slate-50 border-t border-slate-200 px-5 py-3.5 flex items-center justify-between">
-          {!isFinished ? (
-            <>
-              <button
-                onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
-                disabled={currentIndex === 0}
-                className="px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition-colors"
-              >
-                Anterior
-              </button>
+                {/* Interactive Boss Battle Trigger Button */}
+                <div className="pt-2">
+                  <button
+                    onClick={() => setIsBossBattleOpen(true)}
+                    className="px-5 py-2.5 bg-gradient-to-r from-purple-700 via-indigo-600 to-blue-600 hover:from-purple-600 hover:to-blue-500 text-white font-black rounded-xl text-xs sm:text-sm shadow-lg flex items-center gap-2 mx-auto transition-all active:scale-95 cursor-pointer"
+                  >
+                    <Swords className="w-4 h-4 text-amber-300" />
+                    <span>Ver Batalha RPG Contra o Chefão ({levelMeta.boss.name})</span>
+                  </button>
+                </div>
 
-              <div className="flex items-center space-x-2">
-                {currentIndex < simuladoQuestions.length - 1 ? (
-                  <button
-                    onClick={() => setCurrentIndex((prev) => Math.min(simuladoQuestions.length - 1, prev + 1))}
-                    className="px-4 py-1.5 bg-[#0070f2] hover:bg-blue-600 text-white rounded-lg text-xs font-bold flex items-center space-x-1.5 shadow-xs transition-colors"
-                  >
-                    <span>Próxima</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleFinishSimulado}
-                    className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center space-x-1.5 shadow-md transition-colors"
-                  >
-                    <Check className="w-4 h-4" />
-                    <span>Finalizar e Enviar Simulado</span>
-                  </button>
+                {/* Reward Banner if passed */}
+                {finalResult?.passed && (
+                  <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-300 rounded-xl p-4 max-w-md mx-auto text-left shadow-sm space-y-2">
+                    <div className="flex items-center space-x-2 text-amber-900 font-bold text-xs">
+                      <Sparkles className="w-4 h-4 text-amber-600" />
+                      <span>Recompensas de Carreira Desbloqueadas:</span>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-xs text-slate-700">
+                        • <strong>Novo Título:</strong> <span className="text-[#0070f2] font-bold">{levelMeta.titleReward}</span>
+                      </div>
+                      <div className="text-xs text-slate-700">
+                        • <strong>Badge Oficial:</strong> Certificação de {levelMeta.title}
+                      </div>
+                      <div className="text-xs text-slate-700">
+                        • <strong>Chefão Derrotado:</strong> {levelMeta.boss.name}
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
-            </>
-          ) : (
-            <div className="w-full flex items-center justify-between">
-              <button
-                onClick={handleRestart}
-                className="px-4 py-2 border border-slate-300 text-slate-700 hover:bg-slate-100 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-colors"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Refazer Simulado</span>
-              </button>
+            )}
+          </div>
 
-              <button
-                onClick={onClose}
-                className="px-5 py-2 bg-[#0070f2] hover:bg-blue-600 text-white rounded-lg text-xs font-bold transition-colors shadow-xs"
-              >
-                Fechar
-              </button>
-            </div>
-          )}
+          {/* Bottom Actions Bar */}
+          <div className="bg-slate-50 border-t border-slate-200 px-5 py-3.5 flex items-center justify-between">
+            {!isFinished ? (
+              <>
+                <button
+                  onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
+                  disabled={currentIndex === 0}
+                  className="px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition-colors cursor-pointer"
+                >
+                  Anterior
+                </button>
+
+                <div className="flex items-center space-x-2">
+                  {currentIndex < simuladoQuestions.length - 1 ? (
+                    <button
+                      onClick={() => setCurrentIndex((prev) => Math.min(simuladoQuestions.length - 1, prev + 1))}
+                      className="px-4 py-1.5 bg-[#0070f2] hover:bg-blue-600 text-white rounded-lg text-xs font-bold flex items-center space-x-1.5 shadow-xs transition-colors cursor-pointer"
+                    >
+                      <span>Próxima</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleFinishSimulado}
+                      className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center space-x-1.5 shadow-md transition-colors cursor-pointer"
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>Finalizar e Enfrentar Chefão</span>
+                    </button>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="w-full flex items-center justify-between">
+                <button
+                  onClick={handleRestart}
+                  className="px-4 py-2 border border-slate-300 text-slate-700 hover:bg-slate-100 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-colors cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Refazer Simulado</span>
+                </button>
+
+                <button
+                  onClick={onClose}
+                  className="px-5 py-2 bg-[#0070f2] hover:bg-blue-600 text-white rounded-lg text-xs font-bold transition-colors shadow-xs cursor-pointer"
+                >
+                  Fechar
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* RPG Boss Battle Full Animation Modal */}
+      {finalResult && (
+        <RpgBossBattleModal
+          isOpen={isBossBattleOpen}
+          onClose={() => setIsBossBattleOpen(false)}
+          level={level}
+          simuladoResult={finalResult}
+          userProfile={fallbackProfile}
+          soundEnabled={soundEnabled}
+        />
+      )}
+    </>
   );
 };

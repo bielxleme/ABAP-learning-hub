@@ -1,5 +1,14 @@
 import { QuizDifficulty } from '../types';
 
+export interface AbapLevelBoss {
+  name: string;
+  title: string;
+  avatar: string; // emoji or icon
+  description: string;
+  hp: number;
+  weakness: string;
+}
+
 export interface AbapLevelInfo {
   id: QuizDifficulty;
   number: number;
@@ -14,6 +23,7 @@ export interface AbapLevelInfo {
   passingScore: number; // e.g. 70 (%)
   badgeRewardId: string;
   titleReward: string;
+  boss: AbapLevelBoss;
 }
 
 export const ABAP_LEVELS: AbapLevelInfo[] = [
@@ -38,10 +48,18 @@ export const ABAP_LEVELS: AbapLevelInfo[] = [
     ],
     simuladoTitle: 'Simulado Final - Nível 1: Fundamentos & Sintaxe',
     simuladoDescription:
-      'Avaliação oficial com 10 questões aleatórias do Nível 1. Acerte 70% ou mais para obter o Certificado de Fundamentos e desbloquear o título exclusivo!',
+      'Avaliação oficial com 10 questões do Nível 1. Acerte 70% ou mais para obter o Certificado de Fundamentos e derrotar o Bug de Sintaxe Monolítico!',
     passingScore: 70,
     badgeRewardId: 'badge_simulado_n1',
     titleReward: 'Consultora Júnior em Fundamentos ABAP',
+    boss: {
+      name: 'Bug de Sintaxe Monolítico',
+      title: 'Guardião dos Pontos Finais Esquecidos',
+      avatar: '🗿',
+      description: 'Um golem de pedra antiga formado por códigos ABAP sem pontos finais (.) e variáveis não tipadas.',
+      hp: 1000,
+      weakness: 'Ponto final (.) e declarações DATA precisas',
+    },
   },
   {
     id: 'Nível 2',
@@ -65,10 +83,18 @@ export const ABAP_LEVELS: AbapLevelInfo[] = [
     ],
     simuladoTitle: 'Simulado Final - Nível 2: Dicionário & Open SQL',
     simuladoDescription:
-      'Avaliação oficial com 10 questões práticas do Nível 2. Acerte 70% ou mais para obter a certificação de Dicionário SE11 e o título de Operador(a) de Banco de Dados SAP!',
+      'Avaliação oficial com 10 questões práticas do Nível 2. Acerte 70% ou mais para certificar-se em Dicionário SE11 e derrotar o Leviatã do Full Table Scan!',
     passingScore: 70,
     badgeRewardId: 'badge_simulado_n2',
     titleReward: 'Operadora de Banco de Dados SAP',
+    boss: {
+      name: 'Leviatã do Full Table Scan',
+      title: 'Devorador de Memória do Banco',
+      avatar: '🐉',
+      description: 'Uma serpente colossal que realiza SELECT * sem cláusula WHERE, travando as instâncias de diálogo do servidor.',
+      hp: 1500,
+      weakness: 'Cláusula WHERE com chaves primárias e SELECT SINGLE',
+    },
   },
   {
     id: 'Nível 3',
@@ -91,10 +117,18 @@ export const ABAP_LEVELS: AbapLevelInfo[] = [
     ],
     simuladoTitle: 'Simulado Final - Nível 3: Tabelas Internas & Performance',
     simuladoDescription:
-      'Avaliação de 10 questões sobre processamento em memória e performance. Acerte 70% ou mais para desbloquear o título de Mestre de LOOPs e Tabelas Internas!',
+      'Avaliação de 10 questões sobre processamento em memória e performance. Acerte 70% ou mais para banir o Dragão do LOOP Infinito!',
     passingScore: 70,
     badgeRewardId: 'badge_simulado_n3',
     titleReward: 'Mestre de LOOPs & Tabelas Internas',
+    boss: {
+      name: 'Dragão do LOOP Infinito',
+      title: 'Arauto do DUMP TIME_OUT',
+      avatar: '🐲',
+      description: 'Um dragão circular que prende o processamento em iterações sem fim e SELECTs dentro de loops.',
+      hp: 2000,
+      weakness: 'SORT com BINARY SEARCH, Field-Symbols e FOR ALL ENTRIES',
+    },
   },
   {
     id: 'Nível 4',
@@ -116,10 +150,18 @@ export const ABAP_LEVELS: AbapLevelInfo[] = [
     ],
     simuladoTitle: 'Simulado Final - Nível 4: Modularização & BAPIs',
     simuladoDescription:
-      'Avaliação avançada sobre integrações e BAPIs. Desbloqueie a credencial de Arquiteta em Integrações SAP!',
+      'Avaliação avançada sobre integrações e BAPIs. Desbloqueie a credencial de Arquiteta e derrote o Titã das RFCs Rompidas!',
     passingScore: 70,
     badgeRewardId: 'badge_simulado_n4',
     titleReward: 'Arquiteta em Modularização & BAPIs SAP',
+    boss: {
+      name: 'Golem das RFCs Rompidas',
+      title: 'Destruidor de Conexões Transacionais',
+      avatar: '🤖',
+      description: 'Um autômato gigante de ferro fundido que rejeita commits e espalha mensagens de erro na BAPIRET2.',
+      hp: 2500,
+      weakness: 'BAPI_TRANSACTION_COMMIT e tratamento de mensagens da BAPIRET2',
+    },
   },
   {
     id: 'Nível 5',
@@ -141,9 +183,86 @@ export const ABAP_LEVELS: AbapLevelInfo[] = [
     ],
     simuladoTitle: 'Simulado Final - Nível 5: Clean ABAP & S/4HANA',
     simuladoDescription:
-      'O teste definitivo para se consagrar Consultora Sênior SAP S/4HANA e Mestre em Clean ABAP!',
+      'O teste definitivo para se consagrar Consultora Sênior SAP S/4HANA e aniquilar o Monarca dos Short Dumps ST22!',
     passingScore: 70,
     badgeRewardId: 'badge_simulado_n5',
     titleReward: 'Consultora Sênior SAP S/4HANA',
+    boss: {
+      name: 'Monarca dos Short Dumps ST22',
+      title: 'Entidade do SYSTEM_NO_ROLL',
+      avatar: '👑',
+      description: 'O lorde sombrio das telas vermelhas do SAP GUI que surge com dumps catastróficos em produção.',
+      hp: 3000,
+      weakness: 'Sintaxe Clean ABAP 7.40+, @DATA inline e checagens seguras',
+    },
+  },
+  {
+    id: 'Nível 6',
+    number: 6,
+    title: 'Nível 6: Formulários, Spool & Internacionalização',
+    subtitle: 'Smart Forms, Adobe Forms, SAPscript e Tradução SE63',
+    description:
+      'Aprenda a arquitetura conceitual de formulários empresariais SAP: Smart Forms (/1BCDWB/SF...), Adobe Document Services (ADS), ciclo SAPscript e tradução em múltiplos idiomas pela SE63.',
+    icon: 'Printer',
+    color: '#e11d48',
+    topics: [
+      'Arquitetura de Smart Forms e Função Dinâmica SSF_FUNCTION_MODULE_NAME',
+      'Janela Principal (MAIN) vs Secundária (SECONDARY) e quebra de páginas',
+      'Adobe Document Services (ADS): Interface de Dados vs Contexto XFA',
+      'Ciclo de Vida do SAPscript: OPEN_FORM, WRITE_FORM e CLOSE_FORM',
+      'Tags de Comando SAPscript: /: (Comandos) e /E (Elementos de Texto)',
+      'Transação SE63 de Tradução de Textos, Telas e Mensagens',
+      'Clean Code: Eliminação de Hardcoded Strings e uso de Text Symbols',
+      'Gerenciamento de Spool, Pré-visualização e Impressão (SP01 / SP02)',
+    ],
+    simuladoTitle: 'Simulado Final - Nível 6: Formulários & Internacionalização',
+    simuladoDescription:
+      'Avaliação conceitual de arquitetura de formulários e tradução. Acerte 70% ou mais para obter a credencial e derrotar a Quimera do Spool Corrompido!',
+    passingScore: 70,
+    badgeRewardId: 'badge_simulado_n6',
+    titleReward: 'Especialista em Formulários & Internacionalização SAP',
+    boss: {
+      name: 'Quimera do Spool Corrompido',
+      title: 'Monstro das Impressões Travadas na SP01',
+      avatar: '📜',
+      description: 'Uma fera híbrida feita de pergaminhos rasgados, filas de spool emperradas e textos em idiomas truncados.',
+      hp: 3500,
+      weakness: 'SSF_FUNCTION_MODULE_NAME, parâmetros de controle OTF e Text Symbols da SE63',
+    },
+  },
+  {
+    id: 'Nível 7',
+    number: 7,
+    title: 'Nível 7: ABAP OO Avançado & Arquitetura Corporativa',
+    subtitle: 'Classes SE24, Interfaces, Herança, Exceções e Design Patterns',
+    description:
+      'Domine o paradigma orientado a objetos no SAP corporativo: visibilidade (PUBLIC/PROTECTED/PRIVATE), interfaces polimórficas, exceções baseadas em classe CX_ROOT, padrões Singleton/Factory e ABAP Unit.',
+    icon: 'ShieldAlert',
+    color: '#8b5cf6',
+    topics: [
+      'Classes Globais (SE24) e Locais: Definição e Implementação',
+      'Seções de Visibilidade: PUBLIC, PROTECTED e PRIVATE',
+      'Interfaces (zif_...): Polimorfismo, Inversão de Controle e Desacoplamento',
+      'Herança (INHERITING FROM) e Métodos REDEFINITION',
+      'Classes e Métodos ABSTRACT e FINAL',
+      'Exceções Baseadas em Classes (TRY ... CATCH cx_root ... CLEANUP)',
+      'Eventos em Classes (EVENTS, FOR EVENT OF, SET HANDLER)',
+      'Design Patterns no SAP: Singleton, Factory, Strategy e Observer',
+      'Testes Automatizados com ABAP Unit (FOR TESTING)',
+    ],
+    simuladoTitle: 'Simulado Final - Nível 7: ABAP OO & Design Patterns',
+    simuladoDescription:
+      'A prova máxima de maestria técnica para se consagrar Grã-Mestra em Arquitetura ABAP OO e aniquilar o Lorde Supremo CX_SY_REF_IS_INITIAL!',
+    passingScore: 70,
+    badgeRewardId: 'badge_simulado_n7',
+    titleReward: 'Grã-Mestra em ABAP OO & Design Patterns',
+    boss: {
+      name: 'Lorde Supremo CX_SY_REF_IS_INITIAL',
+      title: 'Soberano das Referências Nulas e Objetos Iniciais',
+      avatar: '🧙‍♂️',
+      description: 'O mais antigo e temido antagonista do SAP NetWeaver, capaz de colapsar qualquer transação ao acessar uma referência de objeto não instanciada.',
+      hp: 4000,
+      weakness: 'Blocos TRY / CATCH com CX_ROOT, Factory segura e interfaces polimórficas',
+    },
   },
 ];

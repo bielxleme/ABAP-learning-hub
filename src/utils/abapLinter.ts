@@ -53,6 +53,62 @@ export function lintAbapCode(code: string): AbapSyntaxError[] {
       });
     }
 
+    // Obsolete command checks
+    if (/\bMOVE\s+[\w\-\>\[\]\(\)]+\s+TO\s+[\w\-\>\[\]\(\)]+/i.test(codePart)) {
+      errors.push({
+        line: lineNum,
+        message: 'Comando Obsoleto: MOVE ... TO. No ABAP 7.40+, utilize atribuição direta ou construtor VALUE/CORRESPONDING.',
+        severity: 'warning',
+        suggestion: 'Substitua por: wa_dest = wa_origem. Exemplo: wa_dest = CORRESPONDING #( wa_origem ).',
+      });
+    }
+
+    if (/\bCOMPUTE\s+[\w\-]+\s*=/i.test(codePart)) {
+      errors.push({
+        line: lineNum,
+        message: 'Instrução Obsoleta: Palavra-chave COMPUTE desnecessária.',
+        severity: 'warning',
+        suggestion: 'Use atribuição direta: lv_total = a + b.',
+      });
+    }
+
+    if (/\bOCCURS\s+\d+\b/i.test(codePart)) {
+      errors.push({
+        line: lineNum,
+        message: 'Cláusula Obsoleta: OCCURS em tabelas internas (banida em ABAP OO).',
+        severity: 'warning',
+        suggestion: 'Use: TYPE STANDARD TABLE OF ... WITH EMPTY KEY.',
+      });
+    }
+
+    if (/\bWITH\s+HEADER\s+LINE\b/i.test(codePart)) {
+      errors.push({
+        line: lineNum,
+        message: 'Comando Obsoleto: WITH HEADER LINE proibido em ABAP Orientado a Objetos e ABAP Cloud.',
+        severity: 'warning',
+        suggestion: 'Declare tabela interna explícita e work area separada: DATA: lt_tab TYPE ..., ls_tab TYPE ...',
+      });
+    }
+
+    if (/\bDESCRIBE\s+TABLE\s+[\w\-]+\s+LINES\b/i.test(codePart)) {
+      errors.push({
+        line: lineNum,
+        message: 'Instrução Legada: DESCRIBE TABLE ... LINES substituída por função embutida.',
+        severity: 'warning',
+        suggestion: 'Use a função embutida moderna: lv_count = lines( itab ).',
+      });
+    }
+
+    // ABAP > 7.5 (7.55+) checks
+    if (/\bFINAL\s*\(\s*[\w\-]+\s*\)\s*=/i.test(codePart)) {
+      errors.push({
+        line: lineNum,
+        message: 'Aviso de Versão: Instrução FINAL(...) é um recurso do ABAP 7.55+ (S/4HANA 2020+ / ABAP Cloud).',
+        severity: 'info',
+        suggestion: 'Para compatibilidade com SAP NetWeaver 7.50 e anteriores, use DATA(...) ou declaração clássica DATA.',
+      });
+    }
+
     // Check SELECT without INTO
     if (/\bSELECT\b/i.test(codePart) && !codePart.endsWith('.') && !/\bINTO\b/i.test(codePart)) {
       // It might continue on next line, check later in accumulated

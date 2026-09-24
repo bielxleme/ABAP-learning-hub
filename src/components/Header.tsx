@@ -13,7 +13,10 @@ import {
   ChevronRight,
   UserCheck,
   LogOut,
-  User
+  User,
+  Sun,
+  Moon,
+  UserPlus
 } from 'lucide-react';
 import { UserProfile } from '../types';
 import { PWAInstallButton } from './PWAInstallButton';
@@ -25,6 +28,8 @@ interface HeaderProps {
   toggleSound: () => void;
   onOpenLogon: () => void;
   onOpenGlossary?: () => void;
+  theme?: 'light' | 'dark';
+  toggleTheme?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -34,6 +39,8 @@ export const Header: React.FC<HeaderProps> = ({
   toggleSound,
   onOpenLogon,
   onOpenGlossary,
+  theme = 'light',
+  toggleTheme,
 }) => {
   const [okCode, setOkCode] = useState('');
 
@@ -61,9 +68,9 @@ export const Header: React.FC<HeaderProps> = ({
   const progressInLevel = Math.min(100, Math.max(0, ((userProfile.xp - currentLevelBaseXp) / (nextLevelXp - currentLevelBaseXp)) * 100));
 
   return (
-    <header className="bg-[#1b2a4a] text-white border-b border-[#2d4373] shadow-md sticky top-0 z-50">
+    <header className="bg-[#1b2a4a] text-white border-b border-[#2d4373] shadow-md sticky top-0 z-50 w-full max-w-full overflow-x-hidden">
       {/* Top utility bar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-3">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-2.5">
         {/* Left: Brand + Transaction code input */}
         <div className="flex items-center space-x-3 sm:space-x-4">
           <div className="flex items-center space-x-2 bg-[#0070f2] text-white px-2.5 py-1 rounded font-bold tracking-wider text-sm shadow-sm">
@@ -105,24 +112,37 @@ export const Header: React.FC<HeaderProps> = ({
           {/* User Account Pill & Switch User */}
           <button
             onClick={onOpenLogon}
-            title="Trocar de Usuário / Criar Nova Conta no SAP GUI"
-            className="flex items-center space-x-1.5 px-2.5 py-1 bg-blue-950/70 hover:bg-blue-900 border border-blue-600/50 rounded text-xs transition-colors cursor-pointer group shadow-2xs"
+            title={userProfile.isGuest ? 'Você está como Convidado. Clique para Criar Conta ou Fazer Login!' : 'Trocar de Usuário / Criar Nova Conta no SAP GUI'}
+            className={`flex items-center space-x-1.5 px-2.5 py-1 rounded text-xs transition-colors cursor-pointer group shadow-2xs ${
+              userProfile.isGuest
+                ? 'bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/60 text-amber-200'
+                : 'bg-blue-950/70 hover:bg-blue-900 border border-blue-600/50'
+            }`}
           >
-            <span className="text-base">{userProfile.avatar || '👩‍💻'}</span>
+            <span className="text-base">{userProfile.avatar || (userProfile.isGuest ? '👤' : '👩‍💻')}</span>
             <div className="text-left font-mono max-w-[120px] sm:max-w-[170px]">
-              <span className="font-bold text-white group-hover:text-blue-300 block truncate">
-                {userProfile.name}
+              <span className="font-bold text-white group-hover:text-blue-300 block truncate flex items-center gap-1">
+                <span>{userProfile.name}</span>
+                {userProfile.isGuest && (
+                  <span className="text-[9px] bg-amber-400 text-slate-950 font-black px-1 rounded">
+                    Convidado
+                  </span>
+                )}
               </span>
               <span className="text-[10px] text-emerald-300 block -mt-0.5 truncate font-sans font-medium" title={userProfile.rankTitle}>
-                {userProfile.rankTitle}
+                {userProfile.isGuest ? 'Clique para Criar Conta' : userProfile.rankTitle}
               </span>
             </div>
-            <LogOut className="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-400 ml-1" />
+            {userProfile.isGuest ? (
+              <UserPlus className="w-3.5 h-3.5 text-amber-300 ml-1 shrink-0" />
+            ) : (
+              <LogOut className="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-400 ml-1 shrink-0" />
+            )}
           </button>
 
           {/* Streak */}
           <div 
-            title={`Sequência de estudos ativa: ${userProfile.streakDays} dias seguidos`}
+            title={`Sequência de estudos ativa: ${userProfile.streakDays} dias seguidos (Resolva 1 exercício por dia para ganhar XP bônus!)`}
             className="flex items-center space-x-1 px-2 py-1 bg-amber-500/10 border border-amber-500/30 text-amber-300 rounded text-xs font-medium"
           >
             <Flame className="w-3.5 h-3.5 fill-amber-400 text-amber-500 animate-pulse" />
@@ -145,12 +165,28 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
 
+          {/* Global Light / Dark Theme Toggle */}
+          {toggleTheme && (
+            <button
+              id="btn-toggle-theme"
+              onClick={toggleTheme}
+              title={theme === 'dark' ? 'Mudar para Tema Claro (Light)' : 'Mudar para Tema Escuro (Dark)'}
+              className="p-1.5 rounded text-slate-300 hover:text-white hover:bg-slate-700/60 transition-colors cursor-pointer"
+            >
+              {theme === 'dark' ? (
+                <Sun className="w-4 h-4 text-amber-300 hover:rotate-45 transition-transform" />
+              ) : (
+                <Moon className="w-4 h-4 text-sky-300 hover:-rotate-12 transition-transform" />
+              )}
+            </button>
+          )}
+
           {/* Sound Toggle */}
           <button
             id="btn-toggle-sound"
             onClick={toggleSound}
             title={userProfile.soundEnabled ? 'Silenciar sons' : 'Ativar efeitos sonoros'}
-            className="p-1.5 rounded text-slate-300 hover:text-white hover:bg-slate-700/60 transition-colors"
+            className="p-1.5 rounded text-slate-300 hover:text-white hover:bg-slate-700/60 transition-colors cursor-pointer"
           >
             {userProfile.soundEnabled ? (
               <Volume2 className="w-4 h-4 text-emerald-400" />
@@ -161,8 +197,8 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Main Navigation Bar - Quizzes & Challenges First (Foco Principal do Usuário) */}
-      <div className="bg-[#121f36] border-t border-[#24375b] px-4 sm:px-6 lg:px-8">
+      {/* Main Navigation Bar - Quizzes & Challenges First (Desktop Navigation, Mobile uses BottomNav) */}
+      <div className="bg-[#121f36] border-t border-[#24375b] px-4 sm:px-6 lg:px-8 hidden md:block">
         <nav className="max-w-7xl mx-auto flex items-center space-x-1 sm:space-x-2 overflow-x-auto py-1 scrollbar-none text-xs sm:text-sm font-medium">
           {/* TAB 1: QUIZZES & DESAFIOS (PRIMARY FOCUS) */}
           <button

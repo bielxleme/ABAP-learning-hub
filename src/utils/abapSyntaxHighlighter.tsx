@@ -151,7 +151,7 @@ export const renderHighlightedToken = (
     case 'keyword':
       return (
         <span key={key} className="inline-flex items-center group/kw align-baseline">
-          <span className="text-[#0000ff] font-bold">
+          <span className="font-bold" style={{ color: 'var(--syntax-keyword)' }}>
             {token.text}
           </span>
           {onAsteriskClick && (
@@ -172,28 +172,28 @@ export const renderHighlightedToken = (
 
     case 'number':
       return (
-        <span key={key} className="text-[#008080] font-semibold">
+        <span key={key} className="font-semibold" style={{ color: 'var(--syntax-number)' }}>
           {token.text}
         </span>
       );
 
     case 'string':
       return (
-        <span key={key} className="text-[#008000] font-normal">
+        <span key={key} className="font-normal" style={{ color: 'var(--syntax-string)' }}>
           {token.text}
         </span>
       );
 
     case 'comment':
       return (
-        <span key={key} className="text-[#707070] italic">
+        <span key={key} className="italic" style={{ color: 'var(--syntax-comment)' }}>
           {token.text}
         </span>
       );
 
     case 'operator':
       return (
-        <span key={key} className="text-slate-800 font-bold">
+        <span key={key} className="font-bold" style={{ color: 'var(--syntax-operator)' }}>
           {token.text}
         </span>
       );
@@ -203,7 +203,7 @@ export const renderHighlightedToken = (
       if (isGlossaryTerm && onAsteriskClick) {
         return (
           <span key={key} className="inline-flex items-center group/id align-baseline">
-            <span className="text-slate-900 font-medium">
+            <span className="font-medium" style={{ color: 'var(--syntax-identifier)' }}>
               {token.text}
             </span>
             <button
@@ -221,7 +221,7 @@ export const renderHighlightedToken = (
         );
       }
 
-      return <span key={key} className="text-slate-900">{token.text}</span>;
+      return <span key={key} style={{ color: 'var(--syntax-identifier)' }}>{token.text}</span>;
   }
 };
 
