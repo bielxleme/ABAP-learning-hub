@@ -26,7 +26,9 @@ import {
   Smile,
   ShieldAlert,
   ChevronRight,
-  Swords
+  Swords,
+  Bell,
+  BellRing
 } from 'lucide-react';
 import { UserProfile, UserAnswerHistory, UserErrorRecord, RpgRace } from '../types';
 import { INITIAL_BADGES } from '../data/sapReference';
@@ -34,6 +36,7 @@ import { ErrorDiagnosticPanel } from './ErrorDiagnosticPanel';
 import { analyzeUserBehavior } from '../utils/userBehaviorAnalyzer';
 import { RPG_RACES, getRpgClassForLevel, ALL_RPG_RACES } from '../data/rpgAvatars';
 import { RpgAvatarRenderer } from './RpgAvatarRenderer';
+import { sendStudyReminder } from '../utils/notificationService';
 
 interface ProgressProfileProps {
   userProfile: UserProfile;
@@ -44,6 +47,7 @@ interface ProgressProfileProps {
   onResetProgress: () => void;
   onPracticeTopic?: (category: 'SELECT_SQL' | 'INTERNAL_TABLES' | 'PUNCTUATION_PERIOD' | 'DATA_DECLARATION') => void;
   onClearResolvedErrors?: () => void;
+  onOpenNotificationSettings?: () => void;
 }
 
 export const ProgressProfile: React.FC<ProgressProfileProps> = ({
@@ -55,11 +59,14 @@ export const ProgressProfile: React.FC<ProgressProfileProps> = ({
   onResetProgress,
   onPracticeTopic,
   onClearResolvedErrors,
+  onOpenNotificationSettings,
 }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'behavior' | 'rpg' | 'diagnostics' | 'history'>('overview');
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(userProfile.name);
   const [historyFilter, setHistoryFilter] = useState<'all' | 'correct' | 'wrong'>('all');
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [testNotifMessage, setTestNotifMessage] = useState<string | null>(null);
 
   const heroRace: RpgRace = userProfile.rpgRace || 'guerreiro';
   const raceMeta = RPG_RACES[heroRace] || RPG_RACES.guerreiro;
@@ -504,6 +511,73 @@ export const ProgressProfile: React.FC<ProgressProfileProps> = ({
                 </button>
               </div>
             )}
+          </div>
+
+          {/* Daily Study Notifications & Streak Protection Card */}
+          <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-transparent border border-amber-300/70 dark:border-amber-700/50 rounded-xl p-4 sm:p-5 shadow-xs space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center space-x-3">
+                <div className="p-2.5 bg-gradient-to-br from-amber-500 to-orange-600 text-white rounded-xl shadow-sm shrink-0">
+                  <BellRing className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm sm:text-base">
+                      Lembretes Diários de Estudo (Notification API)
+                    </h3>
+                    <span className="bg-amber-400 text-slate-950 text-[10px] font-bold px-2 py-0.2 rounded-full uppercase">
+                      Streak: {userProfile.streakDays || 1}d 🔥
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-400">
+                    Mantenha sua sequência diária e receba avisos para praticar ABAP antes de o dia acabar.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const res = await sendStudyReminder(userProfile, true);
+                    setTestNotifMessage(res.message);
+                    setTimeout(() => setTestNotifMessage(null), 6000);
+                  }}
+                  className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-lg text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                >
+                  <Bell className="w-3.5 h-3.5" />
+                  <span>Testar Lembrete</span>
+                </button>
+
+                {onOpenNotificationSettings && (
+                  <button
+                    type="button"
+                    onClick={onOpenNotificationSettings}
+                    className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg text-xs font-semibold cursor-pointer transition-colors"
+                  >
+                    Configurar
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {testNotifMessage && (
+              <div className="p-2.5 bg-amber-100 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-lg text-xs text-amber-900 dark:text-amber-200 flex items-center gap-2 animate-in fade-in">
+                <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>{testNotifMessage}</span>
+              </div>
+            )}
+
+            <div className="flex flex-wrap items-center gap-4 text-xs text-slate-600 dark:text-slate-400 pt-1 border-t border-amber-200/50 dark:border-amber-800/40">
+              <div className="flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-blue-500" />
+                <span>Horário do Lembrete: <strong className="text-slate-800 dark:text-slate-200 font-mono">{userProfile.notificationSettings?.reminderTime || '19:00'}</strong></span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Flame className="w-3.5 h-3.5 text-orange-500" />
+                <span>Alerta de Streak em Risco: <strong className="text-emerald-600 dark:text-emerald-400 font-semibold">{userProfile.notificationSettings?.streakProtection !== false ? 'Ativado' : 'Desativado'}</strong></span>
+              </div>
+            </div>
           </div>
 
           {/* Professional Title Selection Box */}
@@ -958,18 +1032,45 @@ export const ProgressProfile: React.FC<ProgressProfileProps> = ({
       )}
 
       {/* Danger Zone: Reset Progress */}
-      <div className="pt-4 border-t border-slate-200 flex justify-end">
-        <button
-          onClick={() => {
-            if (window.confirm('Tem certeza de que deseja resetar todo o progresso do usuário? Essa ação não pode ser desfeita.')) {
-              onResetProgress();
-            }
-          }}
-          className="text-xs text-red-600 hover:text-red-700 hover:underline flex items-center gap-1 cursor-pointer"
-        >
-          <RotateCcw className="w-3.5 h-3.5" />
-          <span>Reiniciar Todo o Progresso Deste Usuário</span>
-        </button>
+      <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex justify-end">
+        {!showResetConfirm ? (
+          <button
+            onClick={() => setShowResetConfirm(true)}
+            className="text-xs text-red-600 hover:text-red-700 hover:underline flex items-center gap-1 cursor-pointer"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Reiniciar Todo o Progresso Deste Usuário</span>
+          </button>
+        ) : (
+          <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-300 dark:border-red-800 rounded-lg text-xs space-y-2 max-w-md animate-in fade-in">
+            <div className="font-bold text-red-900 dark:text-red-200 flex items-center gap-1.5">
+              <AlertTriangle className="w-4 h-4 text-red-600" />
+              <span>Confirmar Reinício de Progresso</span>
+            </div>
+            <p className="text-red-700 dark:text-red-300 text-[11px] leading-relaxed">
+              Tem certeza de que deseja resetar todo o progresso (XP, nível, streak, simulados e histórico)? Essa ação não pode ser desfeita.
+            </p>
+            <div className="flex items-center justify-end space-x-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setShowResetConfirm(false)}
+                className="px-2.5 py-1 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 rounded text-xs cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowResetConfirm(false);
+                  onResetProgress();
+                }}
+                className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-bold shadow-xs cursor-pointer transition-colors"
+              >
+                Sim, Resetar Progresso
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

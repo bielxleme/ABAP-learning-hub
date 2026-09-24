@@ -16,7 +16,8 @@ import {
   User,
   Sun,
   Moon,
-  UserPlus
+  UserPlus,
+  Bell
 } from 'lucide-react';
 import { UserProfile } from '../types';
 import { PWAInstallButton } from './PWAInstallButton';
@@ -28,6 +29,7 @@ interface HeaderProps {
   toggleSound: () => void;
   onOpenLogon: () => void;
   onOpenGlossary?: () => void;
+  onOpenNotifications?: () => void;
   theme?: 'light' | 'dark';
   toggleTheme?: () => void;
 }
@@ -39,6 +41,7 @@ export const Header: React.FC<HeaderProps> = ({
   toggleSound,
   onOpenLogon,
   onOpenGlossary,
+  onOpenNotifications,
   theme = 'light',
   toggleTheme,
 }) => {
@@ -164,6 +167,21 @@ export const Header: React.FC<HeaderProps> = ({
               />
             </div>
           </div>
+
+          {/* Daily Study Notifications & Streak Protection */}
+          {onOpenNotifications && (
+            <button
+              id="btn-study-notifications"
+              onClick={onOpenNotifications}
+              title="Lembretes Diários de Estudo & Proteção de Streak (Notification API)"
+              className="p-1.5 rounded text-slate-300 hover:text-white hover:bg-slate-700/60 transition-colors cursor-pointer relative"
+            >
+              <Bell className="w-4 h-4 text-amber-300" />
+              {userProfile.notificationSettings?.enabled && (
+                <span className="absolute top-1 right-1 w-2 h-2 bg-emerald-400 rounded-full ring-2 ring-[#1b2a4a] animate-pulse" />
+              )}
+            </button>
+          )}
 
           {/* Global Light / Dark Theme Toggle */}
           {toggleTheme && (

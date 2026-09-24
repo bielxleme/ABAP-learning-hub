@@ -17,9 +17,13 @@ import { OfflineIndicator } from './components/OfflineIndicator';
 import { AppUpdateToast } from './components/AppUpdateToast';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { StreakRewardToast } from './components/StreakRewardToast';
+import { StudyReminderNotification } from './components/StudyReminderNotification';
+import { StudyNotificationModal } from './components/StudyNotificationModal';
+import { checkStudyReminderDue, sendStudyReminder } from './utils/notificationService';
 import { processDailyExerciseReward } from './utils/dailyStreakTracker';
 import { simulateAbapExecution } from './utils/abapLinter';
 import { sounds } from './utils/soundEffects';
+import { StudyNotificationSettings } from './types';
 
 const STORAGE_ACTIVE_USER_KEY = 'sap_abap_active_username_v1';
 
@@ -76,6 +80,9 @@ export default function App() {
     bonusXp: number;
     streakDays: number;
   }>({ message: null, bonusXp: 0, streakDays: 1 });
+
+  // Study Notification Modal State
+  const [isNotificationModalOpen, setIsNotificationModalOpen] = useState<boolean>(false);
 
   // Current User Profile State - Defaults to Convidado (Guest) as requested
   const [userProfile, setUserProfile] = useState<UserProfile>(() => {

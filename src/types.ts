@@ -83,6 +83,14 @@ export interface LabExercise {
 
 export type RpgRace = 'orc' | 'mago' | 'guerreiro' | 'elfo' | 'arqueiro' | 'espirito';
 
+export interface StudyNotificationSettings {
+  enabled: boolean;
+  reminderTime: string; // e.g. "19:00"
+  streakProtection: boolean; // Notifica se o usuário ainda não treinou hoje
+  weekendReminders?: boolean;
+  lastNotificationDate?: string; // YYYY-MM-DD da última notificação enviada
+}
+
 export interface UserProfile {
   name: string;
   avatar: string;
@@ -108,6 +116,7 @@ export interface UserProfile {
   isGuest?: boolean;
   lastExerciseDate?: string; // YYYY-MM-DD
   dailyStreakBonusClaimedDate?: string; // YYYY-MM-DD
+  notificationSettings?: StudyNotificationSettings;
 }
 
 export interface AbapSyntaxError {

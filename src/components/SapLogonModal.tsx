@@ -57,6 +57,9 @@ export const SapLogonModal: React.FC<SapLogonModalProps> = ({
   // Confirmation dialog state before logging in
   const [pendingLoginProfile, setPendingLoginProfile] = useState<UserProfile | null>(null);
 
+  // In-app deletion confirmation state (replaces blocked window.confirm in iframe)
+  const [userPendingDelete, setUserPendingDelete] = useState<string | null>(null);
+
   // New User Form States
   const [newUsername, setNewUsername] = useState<string>('');
   const [newPassword, setNewPassword] = useState<string>('');
@@ -261,23 +264,64 @@ export const SapLogonModal: React.FC<SapLogonModalProps> = ({
     }, 600);
   };
 
-  const handleDeleteUser = (e: React.MouseEvent, usernameToDelete: string) => {
-    e.stopPropagation();
-    if (savedProfiles.length <= 1) {
-      setErrorMessage('Você deve manter ao menos um usuário registrado no sistema.');
-      return;
+  const executeDeleteUser = (usernameToDelete: string) => {
+    // 1. Clean individual localStorage entries
+    try {
+      localStorage.removeItem(`sap_abap_user_${usernameToDelete}_profile`);
+      localStorage.removeItem(`sap_abap_user_${usernameToDelete}_history`);
+      localStorage.removeItem(`sap_abap_user_${usernameToDelete}_code`);
+    } catch (e) {
+      console.error('Failed to clear user data from localStorage', e);
     }
 
-    if (!window.confirm(`Deseja realmente excluir o perfil do usuário "${usernameToDelete}" deste dispositivo?`)) {
-      return;
+    // 2. Filter remaining profiles
+    const remaining = savedProfiles.filter(
+      (p) => p.name.toUpperCase() !== usernameToDelete.toUpperCase()
+    );
+
+    let nextProfile: UserProfile;
+
+    if (remaining.length === 0) {
+      const defaultGuest: UserProfile = {
+        name: 'Convidado SAP',
+        avatar: '👤',
+        rpgRace: 'guerreiro',
+        xp: 0,
+        level: 1,
+        rankTitle: 'Visitante NetWeaver (Convidado)',
+        streakDays: 1,
+        lastActiveDate: new Date().toISOString(),
+        completedQuestionIds: [],
+        badges: [],
+        soundEnabled: true,
+        isGuest: true,
+      };
+      saveUsersDirectory([defaultGuest]);
+      setSelectedUsername(defaultGuest.name);
+      nextProfile = defaultGuest;
+    } else {
+      saveUsersDirectory(remaining);
+      if (selectedUsername.toUpperCase() === usernameToDelete.toUpperCase()) {
+        setSelectedUsername(remaining[0].name);
+        nextProfile = remaining[0];
+      } else {
+        const found = remaining.find((p) => p.name.toUpperCase() === selectedUsername.toUpperCase());
+        nextProfile = found || remaining[0];
+      }
     }
 
-    const remaining = savedProfiles.filter((p) => p.name !== usernameToDelete);
-    saveUsersDirectory(remaining);
-
-    if (selectedUsername === usernameToDelete && remaining.length > 0) {
-      setSelectedUsername(remaining[0].name);
+    // 3. If currently active user in App was the deleted user, switch active session
+    if (currentProfile && currentProfile.name.toUpperCase() === usernameToDelete.toUpperCase()) {
+      onLogin(nextProfile);
     }
+
+    if (pendingLoginProfile?.name.toUpperCase() === usernameToDelete.toUpperCase()) {
+      setPendingLoginProfile(null);
+    }
+
+    setUserPendingDelete(null);
+    setSuccessMessage(`Usuário "${usernameToDelete}" foi excluído com sucesso do dispositivo.`);
+    setErrorMessage('');
   };
 
   return (
@@ -458,16 +502,17 @@ export const SapLogonModal: React.FC<SapLogonModalProps> = ({
 
                       <div className="flex items-center space-x-1 shrink-0">
                         {isSelected && <CheckCircle2 className="w-4 h-4 text-[#0070f2]" />}
-                        {savedProfiles.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={(e) => handleDeleteUser(e, p.name)}
-                            title="Excluir usuário"
-                            className="p-1 text-slate-400 hover:text-red-600 rounded"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setUserPendingDelete(p.name);
+                          }}
+                          title={`Excluir perfil de "${p.name}"`}
+                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded cursor-pointer transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </div>
                   );
@@ -754,7 +799,7 @@ export const SapLogonModal: React.FC<SapLogonModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setPendingLoginProfile(null)}
-                  className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition-colors"
+                  className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>
@@ -762,10 +807,58 @@ export const SapLogonModal: React.FC<SapLogonModalProps> = ({
                 <button
                   type="button"
                   onClick={handleConfirmLogon}
-                  className="px-4 py-2 bg-[#0070f2] hover:bg-[#0863cb] text-white rounded-lg text-xs font-bold transition-all shadow-md flex items-center gap-1.5"
+                  className="px-4 py-2 bg-[#0070f2] hover:bg-[#0863cb] text-white rounded-lg text-xs font-bold transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
                 >
                   <CheckCircle2 className="w-4 h-4 text-emerald-300" />
                   <span>Confirmar e Entrar</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* IN-APP CONFIRMATION MODAL: Delete User Profile (fixes blocked window.confirm in iframe) */}
+        {userPendingDelete && (
+          <div className="fixed inset-0 z-70 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+            <div className="bg-white rounded-xl shadow-2xl border-2 border-red-500 p-5 max-w-sm sm:max-w-md w-full space-y-4">
+              <div className="flex items-start space-x-3 text-red-600">
+                <div className="p-2.5 bg-red-100 rounded-full shrink-0">
+                  <Trash2 className="w-6 h-6 text-red-600" />
+                </div>
+                <div>
+                  <h4 className="text-base font-bold text-slate-900">
+                    Confirmar Exclusão de Usuário
+                  </h4>
+                  <p className="text-xs text-red-600 font-semibold">
+                    Esta ação é permanente e irreversível
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs space-y-2 text-slate-700">
+                <p>
+                  Tem certeza de que deseja excluir o usuário SAP <strong className="font-mono bg-red-100 px-1.5 py-0.5 rounded text-red-900 font-bold">"{userPendingDelete}"</strong> deste dispositivo?
+                </p>
+                <p className="text-slate-500 text-[11px] leading-relaxed">
+                  Todo o histórico de exercícios, simulados, streak diário e código do editor vinculados a este usuário serão permanentemente removidos deste navegador.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end space-x-2 pt-2 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setUserPendingDelete(null)}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-100 cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => executeDeleteUser(userPendingDelete)}
+                  className="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Sim, Excluir Definitivamente</span>
                 </button>
               </div>
             </div>
