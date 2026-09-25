@@ -25,7 +25,13 @@ import { checkStudyReminderDue, sendStudyReminder } from './utils/notificationSe
 import { processDailyExerciseReward } from './utils/dailyStreakTracker';
 import { simulateAbapExecution } from './utils/abapLinter';
 import { sounds } from './utils/soundEffects';
-import { StudyNotificationSettings } from './types';
+import { StudyNotificationSettings, AppUserDataBackup } from './types';
+import {
+  assembleBackupData,
+  autoSyncBackupIfOnline,
+  applyRestoredBackup,
+  requestPersistentStorage
+} from './utils/backupManager';
 
 const STORAGE_ACTIVE_USER_KEY = 'sap_abap_active_username_v1';
 
@@ -48,6 +54,8 @@ export default function App() {
     }
     return true;
   });
+  const [logonInitialTab, setLogonInitialTab] = useState<'select' | 'create' | 'restore'>('select');
+  const [profileInitialTab, setProfileInitialTab] = useState<'overview' | 'behavior' | 'rpg' | 'diagnostics' | 'history' | 'backup'>('overview');
 
   // Theme state persisted in localStorage & synchronized with CSS variables
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -223,6 +231,32 @@ export default function App() {
       }
     } catch (e) {}
   }, [answerHistory, userProfile.name]);
+
+  // Request browser persistent storage on startup
+  useEffect(() => {
+    requestPersistentStorage();
+  }, []);
+
+  // Automatic Background Cloud Sync for reinstallation continuity
+  useEffect(() => {
+    if (!userProfile.name || userProfile.isGuest) return;
+    const timer = setTimeout(() => {
+      const backup = assembleBackupData(userProfile, answerHistory, currentCode, theme);
+      autoSyncBackupIfOnline(backup);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [userProfile, answerHistory, currentCode, theme]);
+
+  // Handle restoring backup snapshot
+  const handleRestoreBackup = (backup: AppUserDataBackup) => {
+    applyRestoredBackup(backup, (restoredUser) => {
+      setUserProfile(restoredUser);
+      setAnswerHistory(backup.answerHistory || []);
+      if (backup.currentCode) setCurrentCode(backup.currentCode);
+      if (backup.theme) setTheme(backup.theme);
+      sounds.playLevelUp();
+    });
+  };
 
   // Dynamic Rank Title calculation
   const calculateRankTitle = (xp: number): { title: string; level: number } => {
@@ -497,6 +531,7 @@ export default function App() {
       {/* SAP Logon Modal: Shown first or when user requests to switch accounts */}
       <SapLogonModal
         isOpen={isLogonOpen}
+        initialTab={logonInitialTab}
         currentProfile={userProfile}
         onLogin={handleUserLogin}
         canCancel={Boolean(userProfile.name)}
@@ -509,7 +544,10 @@ export default function App() {
         setActiveTab={setActiveTab as any}
         userProfile={userProfile}
         toggleSound={handleToggleSound}
-        onOpenLogon={() => setIsLogonOpen(true)}
+        onOpenLogon={() => {
+          setLogonInitialTab('select');
+          setIsLogonOpen(true);
+        }}
         onOpenGlossary={() => {
           setGlossaryOverlayInitialTerm('SELECT');
           setIsGlossaryOverlayOpen(true);
@@ -517,6 +555,10 @@ export default function App() {
         onOpenNotifications={() => setIsNotificationModalOpen(true)}
         onOpenUpdates={() => setIsUpdateModalOpen(true)}
         onOpenWindowsInstaller={() => setIsWindowsModalOpen(true)}
+        onOpenBackup={() => {
+          setProfileInitialTab('backup');
+          setActiveTab('progress');
+        }}
         theme={theme}
         toggleTheme={toggleTheme}
       />
@@ -623,6 +665,7 @@ export default function App() {
         {activeTab === 'progress' && (
           <ProgressProfile
             userProfile={userProfile}
+            initialTab={profileInitialTab}
             onUpdateProfileName={handleUpdateProfileName}
             onEquipTitle={handleEquipTitle}
             onUpdateRpgRace={handleUpdateRpgRace}
@@ -632,6 +675,8 @@ export default function App() {
               setActiveTab('quiz');
             }}
             onClearResolvedErrors={handleClearResolvedErrors}
+            currentCode={currentCode}
+            onRestoreBackup={handleRestoreBackup}
           />
         )}
 

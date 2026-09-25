@@ -1,5 +1,6 @@
 import express from "express";
 import path from "path";
+import fs from "fs";
 import dotenv from "dotenv";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
@@ -149,6 +150,132 @@ app.get("/api/updates/stream", (req, res) => {
     clearInterval(heartbeat);
     sseClients.delete(res);
   });
+});
+
+// ==============================================================================
+// Persistent Cloud Backup & Re-installation Recovery Storage
+// ==============================================================================
+const DATA_DIR = path.join(process.cwd(), "data");
+const BACKUPS_FILE = path.join(DATA_DIR, "user_backups.json");
+
+function ensureDataDir() {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+}
+
+function loadAllBackups(): Record<string, any> {
+  ensureDataDir();
+  if (!fs.existsSync(BACKUPS_FILE)) {
+    return {};
+  }
+  try {
+    const raw = fs.readFileSync(BACKUPS_FILE, "utf-8");
+    return JSON.parse(raw);
+  } catch (err) {
+    console.error("[Backup] Erro ao ler arquivo de backups:", err);
+    return {};
+  }
+}
+
+function saveAllBackups(data: Record<string, any>) {
+  ensureDataDir();
+  try {
+    fs.writeFileSync(BACKUPS_FILE, JSON.stringify(data, null, 2), "utf-8");
+  } catch (err) {
+    console.error("[Backup] Erro ao salvar arquivo de backups:", err);
+  }
+}
+
+// Save or Auto-sync user backup to cloud
+app.post("/api/backup/save", (req, res) => {
+  try {
+    const { username, email, profile, answerHistory, currentCode, theme, version } = req.body;
+    if (!username || !profile) {
+      return res.status(400).json({ error: "Dados de usuário inválidos para backup." });
+    }
+
+    const backups = loadAllBackups();
+    const normalizedKey = username.trim().toLowerCase();
+    const nowIso = new Date().toISOString();
+
+    backups[normalizedKey] = {
+      username: profile.name || username,
+      email: email || profile.email || "bielxleme@gmail.com",
+      profile,
+      answerHistory: answerHistory || [],
+      currentCode: currentCode || "",
+      theme: theme || "light",
+      version: version || "1.3.0",
+      savedAt: nowIso,
+    };
+
+    saveAllBackups(backups);
+
+    res.json({
+      success: true,
+      savedAt: nowIso,
+      message: "Backup salvo com sucesso na nuvem!",
+    });
+  } catch (err: any) {
+    console.error("[Backup] Erro no endpoint save:", err);
+    res.status(500).json({ error: "Falha ao salvar backup no servidor." });
+  }
+});
+
+// List all available cloud backups
+app.get("/api/backup/list", (req, res) => {
+  try {
+    const backups = loadAllBackups();
+    const list = Object.values(backups).map((b: any) => ({
+      username: b.username,
+      email: b.email,
+      level: b.profile?.level || 1,
+      xp: b.profile?.xp || 0,
+      avatar: b.profile?.avatar || "👤",
+      rankTitle: b.profile?.rankTitle || "Estagiária ABAP (SE38)",
+      badgesCount: (b.profile?.badges || []).length,
+      savedAt: b.savedAt || new Date().toISOString(),
+    }));
+
+    res.json({ backups: list });
+  } catch (err) {
+    res.status(500).json({ error: "Falha ao listar backups." });
+  }
+});
+
+// Restore backup by username or identifier
+app.post("/api/backup/restore", (req, res) => {
+  try {
+    const { username } = req.body;
+    if (!username) {
+      return res.status(400).json({ error: "Nome de usuário obrigatório para restauração." });
+    }
+
+    const backups = loadAllBackups();
+    const normalizedKey = username.trim().toLowerCase();
+    let found = backups[normalizedKey];
+
+    if (!found) {
+      const match = Object.values(backups).find(
+        (b: any) =>
+          b.username?.trim().toLowerCase() === normalizedKey ||
+          b.email?.trim().toLowerCase() === normalizedKey
+      );
+      if (match) found = match;
+    }
+
+    if (!found) {
+      return res.status(404).json({ error: `Nenhum backup encontrado na nuvem para "${username}".` });
+    }
+
+    res.json({
+      success: true,
+      backup: found,
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Erro ao restaurar backup." });
+  }
 });
 
 // Windows 11 Installer Download Endpoint

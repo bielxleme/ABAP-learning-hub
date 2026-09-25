@@ -213,3 +213,26 @@ export interface CodeEvaluationResult {
   detectedFeatures: string[];
 }
 
+export interface AppUserDataBackup {
+  version: string;
+  backupDate: string;
+  username: string;
+  email?: string;
+  profile: UserProfile;
+  answerHistory: UserAnswerHistory[];
+  currentCode: string;
+  theme?: 'light' | 'dark';
+  allUsersList?: UserProfile[];
+}
+
+export interface CloudBackupSummary {
+  username: string;
+  email?: string;
+  level: number;
+  xp: number;
+  avatar: string;
+  rankTitle: string;
+  badgesCount: number;
+  savedAt: string;
+}
+

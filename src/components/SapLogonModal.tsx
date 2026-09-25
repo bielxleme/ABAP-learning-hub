@@ -18,11 +18,19 @@ import {
   EyeOff,
   Mail,
   AlertCircle,
-  HelpCircle
+  HelpCircle,
+  Cloud,
+  CloudDownload,
+  FileUp,
+  RefreshCw,
+  Smartphone,
+  Download,
+  ArrowRight
 } from 'lucide-react';
-import { UserProfile, RpgRace } from '../types';
+import { UserProfile, RpgRace, CloudBackupSummary } from '../types';
 import { INITIAL_BADGES } from '../data/sapReference';
 import { getRandomRpgRace, RPG_RACES, ALL_RPG_RACES } from '../data/rpgAvatars';
+import { listCloudBackups, fetchCloudBackup, importBackupFromFile, applyRestoredBackup, formatBackupDate } from '../utils/backupManager';
 
 interface SapLogonModalProps {
   currentProfile: UserProfile | null;
@@ -30,6 +38,7 @@ interface SapLogonModalProps {
   isOpen: boolean;
   canCancel?: boolean;
   onClose?: () => void;
+  initialTab?: 'select' | 'create' | 'restore';
 }
 
 const STORAGE_USERS_KEY = 'sap_abap_users_directory_v1';
@@ -45,8 +54,9 @@ export const SapLogonModal: React.FC<SapLogonModalProps> = ({
   isOpen,
   canCancel = false,
   onClose,
+  initialTab,
 }) => {
-  const [activeTab, setActiveTab] = useState<'select' | 'create'>('select');
+  const [activeTab, setActiveTab] = useState<'select' | 'create' | 'restore'>(initialTab || 'select');
   const [selectedUsername, setSelectedUsername] = useState<string>('Convidado SAP');
   const [passwordInput, setPasswordInput] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
@@ -60,6 +70,12 @@ export const SapLogonModal: React.FC<SapLogonModalProps> = ({
   // In-app deletion confirmation state (replaces blocked window.confirm in iframe)
   const [userPendingDelete, setUserPendingDelete] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab, isOpen]);
+
   // New User Form States
   const [newUsername, setNewUsername] = useState<string>('');
   const [newPassword, setNewPassword] = useState<string>('');
@@ -68,6 +84,12 @@ export const SapLogonModal: React.FC<SapLogonModalProps> = ({
   const [isGoogleLinked, setIsGoogleLinked] = useState<boolean>(true);
   const [newAvatar, setNewAvatar] = useState<string>('👩‍💻');
   const [newRpgRace, setNewRpgRace] = useState<RpgRace>(() => getRandomRpgRace());
+
+  // Cloud Backup and Restoration States
+  const [cloudBackups, setCloudBackups] = useState<CloudBackupSummary[]>([]);
+  const [isLoadingCloudBackups, setIsLoadingCloudBackups] = useState<boolean>(false);
+  const [isRestoring, setIsRestoring] = useState<boolean>(false);
+  const [restoreSearchInput, setRestoreSearchInput] = useState<string>('');
 
   // Load saved profiles from localStorage
   useEffect(() => {
@@ -132,6 +154,100 @@ export const SapLogonModal: React.FC<SapLogonModalProps> = ({
   const saveUsersDirectory = (users: UserProfile[]) => {
     setSavedProfiles(users);
     localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(users));
+  };
+
+  // Fetch available cloud backups from the server
+  const handleRefreshCloudBackups = async () => {
+    setIsLoadingCloudBackups(true);
+    setErrorMessage('');
+    try {
+      const list = await listCloudBackups();
+      setCloudBackups(list);
+    } catch {
+      setCloudBackups([]);
+    } finally {
+      setIsLoadingCloudBackups(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      handleRefreshCloudBackups();
+    }
+  }, [isOpen]);
+
+  // Restore backup from cloud
+  const handleRestoreFromCloud = async (targetUsername: string) => {
+    if (!targetUsername.trim()) return;
+    setIsRestoring(true);
+    setErrorMessage('');
+    setSuccessMessage('');
+
+    try {
+      const backup = await fetchCloudBackup(targetUsername.trim());
+      if (!backup) {
+        setErrorMessage(`Não foi encontrado backup na nuvem para "${targetUsername}". Verifique se o nome está correto.`);
+        setIsRestoring(false);
+        return;
+      }
+
+      const success = applyRestoredBackup(backup, (restoredUser) => {
+        const raw = localStorage.getItem(STORAGE_USERS_KEY);
+        if (raw) {
+          try {
+            setSavedProfiles(JSON.parse(raw));
+          } catch {}
+        }
+        setSuccessMessage(`✅ Perfil "${restoredUser.name}" restaurado com sucesso! Nível ${restoredUser.level}, ${restoredUser.xp} XP e ${restoredUser.badges.length} conquistas recuperadas.`);
+        setTimeout(() => {
+          onLogin(restoredUser);
+          if (onClose) onClose();
+        }, 1200);
+      });
+
+      if (!success) {
+        setErrorMessage('Falha ao aplicar os dados do backup restaurado.');
+      }
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Erro ao comunicar com a nuvem de restauração.');
+    } finally {
+      setIsRestoring(false);
+    }
+  };
+
+  // Restore backup from imported JSON file
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsRestoring(true);
+    setErrorMessage('');
+    setSuccessMessage('');
+
+    try {
+      const backup = await importBackupFromFile(file);
+      const success = applyRestoredBackup(backup, (restoredUser) => {
+        const raw = localStorage.getItem(STORAGE_USERS_KEY);
+        if (raw) {
+          try {
+            setSavedProfiles(JSON.parse(raw));
+          } catch {}
+        }
+        setSuccessMessage(`✅ Arquivo de backup restaurado com sucesso! Perfil "${restoredUser.name}" carregado com todo o progresso.`);
+        setTimeout(() => {
+          onLogin(restoredUser);
+          if (onClose) onClose();
+        }, 1200);
+      });
+
+      if (!success) {
+        setErrorMessage('Falha ao processar o arquivo de backup selecionado.');
+      }
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Arquivo de backup inválido ou corrompido.');
+    } finally {
+      setIsRestoring(false);
+      e.target.value = ''; // reset input
+    }
   };
 
   const selectedProfile = savedProfiles.find(
@@ -422,6 +538,24 @@ export const SapLogonModal: React.FC<SapLogonModalProps> = ({
             <UserPlus className="w-3.5 h-3.5" />
             <span>Criar Novo Usuário SAP</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('restore');
+              setErrorMessage('');
+              setSuccessMessage('');
+              handleRefreshCloudBackups();
+            }}
+            className={`px-3 py-1.5 rounded font-semibold transition-all flex items-center gap-1.5 ${
+              activeTab === 'restore'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'text-indigo-700 hover:bg-indigo-100 bg-indigo-50/70 border border-indigo-200'
+            }`}
+          >
+            <CloudDownload className="w-3.5 h-3.5" />
+            <span>Recuperar / Restaurar Backup</span>
+          </button>
         </div>
 
         {/* Alert Feedback Messages */}
@@ -448,6 +582,60 @@ export const SapLogonModal: React.FC<SapLogonModalProps> = ({
         {/* TAB 1: Select User & Logon */}
         {activeTab === 'select' && (
           <form onSubmit={handleInitiateLogon} className="p-4 sm:p-5 space-y-4 bg-white text-xs sm:text-sm">
+            {/* Reinstallation Recovery Notice Banner */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/90 rounded-lg p-2.5 flex items-center justify-between gap-2.5">
+              <div className="flex items-center gap-2">
+                <span className="p-1.5 bg-indigo-100 text-indigo-700 rounded-md shrink-0">
+                  <Cloud className="w-4 h-4" />
+                </span>
+                <span className="text-[11px] text-slate-700 leading-snug">
+                  Reinstalou o app ou trocou de aparelho? Seus dados e progresso podem ser restaurados da nuvem.
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('restore');
+                  handleRefreshCloudBackups();
+                }}
+                className="shrink-0 text-[11px] font-bold text-indigo-700 hover:text-indigo-950 bg-white hover:bg-indigo-50 border border-indigo-300 px-2.5 py-1 rounded transition flex items-center gap-1 shadow-2xs cursor-pointer"
+              >
+                <CloudDownload className="w-3.5 h-3.5" />
+                <span>Restaurar Meus Dados</span>
+              </button>
+            </div>
+
+            {/* Cloud Backup Found Instant Restore Box (ideal for freshly reinstalled app) */}
+            {cloudBackups.length > 0 && (
+              <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-indigo-50 border border-emerald-300 rounded-lg p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 shadow-xs">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0 text-lg border border-emerald-300">
+                    {cloudBackups[0].avatar || '👩‍💻'}
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-emerald-950 flex items-center gap-1.5 flex-wrap">
+                      <span>Backup Detectado: <strong>{cloudBackups[0].username}</strong></span>
+                      <span className="text-[10px] bg-emerald-200 text-emerald-800 px-1.5 py-0.2 rounded-full font-medium">
+                        Nível {cloudBackups[0].level} • {cloudBackups[0].xp} XP
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-600">
+                      Identificamos seu progresso salvo na nuvem. Deseja restaurar tudo agora?
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleRestoreFromCloud(cloudBackups[0].username)}
+                  disabled={isRestoring}
+                  className="shrink-0 w-full sm:w-auto text-xs font-bold bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-3 py-1.5 rounded-md transition-colors flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                >
+                  <CloudDownload className="w-3.5 h-3.5" />
+                  <span>{isRestoring ? 'Restaurando...' : `Restaurar 1-Clique`}</span>
+                </button>
+              </div>
+            )}
+
             {/* Registered Users Cards */}
             <div className="space-y-1.5">
               <label className="font-bold text-slate-700 text-xs flex items-center justify-between">
@@ -769,6 +957,165 @@ export const SapLogonModal: React.FC<SapLogonModalProps> = ({
               </div>
             </div>
           </form>
+        )}
+
+        {/* TAB 3: Restore / Recover Backup After Reinstallation */}
+        {activeTab === 'restore' && (
+          <div className="p-4 sm:p-5 space-y-4 bg-white text-xs sm:text-sm">
+            {/* Explanatory Info Card */}
+            <div className="bg-indigo-50/80 border border-indigo-200 rounded-lg p-3 text-slate-700 space-y-1.5">
+              <div className="flex items-center gap-2 text-indigo-900 font-bold text-xs sm:text-sm">
+                <CloudDownload className="w-4 h-4 text-indigo-600 shrink-0" />
+                <span>Recuperação e Restauração de Dados Pós-Desinstalação</span>
+              </div>
+              <p className="text-[11px] text-slate-600 leading-relaxed">
+                Ao desinstalar o aplicativo no Android ou Desktop, o navegador apaga a memória temporária. 
+                Com a <strong>Nuvem do SAP Hub</strong> e os <strong>Arquivos de Backup (.json)</strong>, você recupera instantaneamente seu nível, XP, histórico de quizzes e códigos do editor.
+              </p>
+            </div>
+
+            {/* SECTION 1: Cloud Backups Found */}
+            <div className="space-y-2 border border-slate-200 rounded-lg p-3.5 bg-slate-50/50">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Cloud className="w-4 h-4 text-blue-600" />
+                  <span className="font-bold text-slate-800 text-xs sm:text-sm">
+                    Backups Salvos na Nuvem do Servidor
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRefreshCloudBackups}
+                  disabled={isLoadingCloudBackups || isRestoring}
+                  className="text-xs text-blue-700 hover:text-blue-900 flex items-center gap-1 font-semibold cursor-pointer"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isLoadingCloudBackups ? 'animate-spin' : ''}`} />
+                  <span>Atualizar</span>
+                </button>
+              </div>
+
+              {isLoadingCloudBackups ? (
+                <div className="py-6 text-center text-slate-500 flex flex-col items-center justify-center space-y-2">
+                  <RefreshCw className="w-5 h-5 animate-spin text-indigo-600" />
+                  <span className="text-xs">Consultando backups na nuvem...</span>
+                </div>
+              ) : cloudBackups.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                  {cloudBackups.map((cb) => (
+                    <div
+                      key={cb.username}
+                      className="p-3 bg-white border border-slate-300 hover:border-indigo-500 rounded-lg shadow-2xs transition-all space-y-2"
+                    >
+                      <div className="flex items-center space-x-2.5">
+                        <div className="w-10 h-10 rounded-full bg-indigo-50 border border-indigo-200 text-xl flex items-center justify-center shrink-0">
+                          {cb.avatar || '👤'}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-bold text-slate-900 truncate text-xs sm:text-sm flex items-center gap-1">
+                            <span>{cb.username}</span>
+                          </div>
+                          <div className="text-[11px] text-indigo-700 font-medium truncate">
+                            {cb.rankTitle}
+                          </div>
+                          <div className="text-[10px] text-slate-400">
+                            Salvo em: {formatBackupDate(cb.savedAt)}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between text-[11px] bg-slate-50 px-2 py-1 rounded border border-slate-100">
+                        <span className="text-slate-600">Nível <strong>{cb.level}</strong> ({cb.xp} XP)</span>
+                        <span className="text-emerald-700 font-semibold">{cb.badgesCount} conquistas</span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleRestoreFromCloud(cb.username)}
+                        disabled={isRestoring}
+                        className="w-full py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded font-bold text-xs shadow-2xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+                      >
+                        <CloudDownload className="w-3.5 h-3.5" />
+                        <span>Restaurar Este Perfil</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-4 px-3 bg-white rounded border border-slate-200 text-center text-slate-500 text-xs space-y-1">
+                  <p className="font-medium text-slate-700">Nenhum backup automático listado no momento.</p>
+                  <p className="text-[11px] text-slate-400">
+                    Use o campo abaixo para buscar diretamente pelo seu nome de usuário ou e-mail cadastrado.
+                  </p>
+                </div>
+              )}
+
+              {/* Direct Search by Username */}
+              <div className="pt-2 border-t border-slate-200/80 flex flex-col sm:flex-row items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="Ou digite o nome de usuário ou e-mail para restaurar..."
+                  value={restoreSearchInput}
+                  onChange={(e) => setRestoreSearchInput(e.target.value)}
+                  className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleRestoreFromCloud(restoreSearchInput)}
+                  disabled={!restoreSearchInput.trim() || isRestoring}
+                  className="w-full sm:w-auto shrink-0 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+                >
+                  <CloudDownload className="w-3.5 h-3.5" />
+                  <span>Buscar e Restaurar</span>
+                </button>
+              </div>
+            </div>
+
+            {/* SECTION 2: Import from .json File */}
+            <div className="border border-slate-200 rounded-lg p-3.5 bg-slate-50/50 space-y-2">
+              <div className="flex items-center gap-2 text-slate-800 font-bold text-xs sm:text-sm">
+                <FileUp className="w-4 h-4 text-emerald-600" />
+                <span>Restaurar de Arquivo de Backup Físico (.json)</span>
+              </div>
+              <p className="text-[11px] text-slate-600 leading-relaxed">
+                Se você baixou um arquivo <code>sap-abap-backup-*.json</code> antes de desinstalar, pode importá-lo diretamente do seu computador ou celular, mesmo sem internet:
+              </p>
+
+              <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-emerald-300 hover:border-emerald-500 rounded-lg bg-emerald-50/30 hover:bg-emerald-50/60 cursor-pointer transition text-center group">
+                <FileUp className="w-6 h-6 text-emerald-600 group-hover:scale-110 transition-transform mb-1" />
+                <span className="font-bold text-xs text-emerald-800">
+                  Clique aqui para selecionar o arquivo .json de backup
+                </span>
+                <span className="text-[10px] text-slate-500 mt-0.5">
+                  Suporta arquivos .json gerados na aba de Perfil & Conquistas
+                </span>
+                <input
+                  type="file"
+                  accept=".json,application/json"
+                  onChange={handleImportFile}
+                  disabled={isRestoring}
+                  className="hidden"
+                />
+              </label>
+            </div>
+
+            {/* Back Button */}
+            <div className="pt-2 border-t border-slate-200 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setActiveTab('select')}
+                className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-semibold cursor-pointer"
+              >
+                Voltar aos Usuários
+              </button>
+              <button
+                type="button"
+                onClick={handleContinueAsGuest}
+                className="text-xs text-slate-500 hover:text-slate-800 underline cursor-pointer"
+              >
+                Continuar como Convidado
+              </button>
+            </div>
+          </div>
         )}
 
         {/* CONFIRMATION MODAL OVERLAY: User Confirmation Before Logging In */}

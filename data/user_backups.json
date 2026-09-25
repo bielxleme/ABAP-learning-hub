@@ -1,0 +1,100 @@
+{
+  "gleme": {
+    "username": "GLEME",
+    "email": "bielxleme@gmail.com",
+    "profile": {
+      "name": "GLEME",
+      "avatar": "👩‍💻",
+      "email": "bielxleme@gmail.com",
+      "googleLinked": false,
+      "xp": 140,
+      "level": 1,
+      "rankTitle": "Iniciante no SAP GUI (SE38)",
+      "streakDays": 1,
+      "lastActiveDate": "2026-09-25T01:58:55.941Z",
+      "completedQuestionIds": [
+        "n1_001",
+        "n1_002",
+        "n1_003"
+      ],
+      "badges": [
+        "badge_first_step",
+        "badge_account_linked"
+      ],
+      "soundEnabled": true,
+      "lastExerciseDate": "2026-09-25",
+      "dailyStreakBonusClaimedDate": "2026-09-25",
+      "equippedTitle": "Iniciante no SAP GUI (SE38)"
+    },
+    "answerHistory": [
+      {
+        "questionId": "n1_001",
+        "questionTitle": "Comando de Início de Programa Executável",
+        "level": "Nível 1",
+        "type": "multiple_choice",
+        "isCorrect": true,
+        "userAnswer": "1",
+        "date": "2026-09-25T02:01:12.622Z",
+        "feedback": "Programas executáveis (tipo 1) na SE38 iniciam com a palavra-chave REPORT (ou PROGRAM) seguida do nome do programa, obrigatoriamente iniciando por Z ou Y para objetos de cliente.",
+        "timeSpentSeconds": 10
+      },
+      {
+        "questionId": "n1_003",
+        "questionTitle": "Comentários de Linha Inteira e Fim de Linha",
+        "level": "Nível 1",
+        "type": "multiple_choice",
+        "isCorrect": true,
+        "userAnswer": "2",
+        "date": "2026-09-25T01:59:46.743Z",
+        "feedback": "Em ABAP, um asterisco (*) na coluna 1 comenta a linha inteira. Aspas duplas (\") comentam qualquer texto a partir daquele ponto até o final da linha.",
+        "timeSpentSeconds": 12
+      },
+      {
+        "questionId": "n1_002",
+        "questionTitle": "Obrigatoriedade do Ponto Final (.)",
+        "level": "Nível 1",
+        "type": "theory",
+        "isCorrect": true,
+        "userAnswer": "1",
+        "date": "2026-09-25T01:59:26.871Z",
+        "feedback": "No ABAP, cada instrução completa é encerrada com um ponto final (.). Se o ponto for omitido, o compilador acusa erro de sintaxe imediato (Unable to interpret statement).",
+        "timeSpentSeconds": 12
+      },
+      {
+        "questionId": "n1_001",
+        "questionTitle": "Comando de Início de Programa Executável",
+        "level": "Nível 1",
+        "type": "multiple_choice",
+        "isCorrect": true,
+        "userAnswer": "1",
+        "date": "2026-09-25T01:58:55.937Z",
+        "feedback": "Programas executáveis (tipo 1) na SE38 iniciam com a palavra-chave REPORT (ou PROGRAM) seguida do nome do programa, obrigatoriamente iniciando por Z ou Y para objetos de cliente.",
+        "timeSpentSeconds": 12863
+      }
+    ],
+    "currentCode": "*&---------------------------------------------------------------------*\n*& Report Z_APRENDIZADO_ABAP\n*& Título: Consulta de Materiais Consignados (Tipo KA)\n*&---------------------------------------------------------------------*\nREPORT z_aprendizado_abap.\n\nTABLES: mara.\n\n* Parâmetro de tela para filtrar tipo de material\nPARAMETERS: p_mtart TYPE mara-mtart DEFAULT 'KA' OBLIGATORY.\n\n* Definição de tipos\nTYPES: BEGIN OF ty_material,\n         matnr TYPE mara-matnr,\n         mtart TYPE mara-mtart,\n         meins TYPE mara-meins,\n         maktx TYPE maktx,\n       END OF ty_material.\n\nDATA: lt_materiais TYPE TABLE OF ty_material,\n      ls_material  TYPE ty_material.\n\nSTART-OF-SELECTION.\n  \" Seleciona os campos MATNR e MTART da tabela MARA\n  SELECT matnr, mtart, meins, maktx\n    FROM mara\n    INTO TABLE @lt_materiais\n    WHERE mtart = @p_mtart.\n\n  IF sy-subrc = 0.\n    WRITE: /(60) 'LISTAGEM DE MATERIAIS ENCONTRADOS NO SAP' COLOR COL_HEADING.\n    ULINE.\n\n    LOOP AT lt_materiais INTO ls_material.\n      WRITE: / ls_material-matnr COLOR COL_KEY,\n               ls_material-mtart COLOR COL_NORMAL,\n               ls_material-meins,\n               ls_material-maktx.\n    ENDLOOP.\n\n    WRITE: / 'Total de registros lidos:', lines( lt_materiais ) COLOR COL_TOTAL.\n  ELSE.\n    WRITE: / 'Nenhum material encontrado com o tipo:', p_mtart COLOR COL_NEGATIVE.\n  ENDIF.\n",
+    "theme": "dark",
+    "version": "1.3.0",
+    "savedAt": "2026-09-25T11:26:47.326Z"
+  },
+  "bielleme": {
+    "username": "BielLeme",
+    "email": "bielxleme@gmail.com",
+    "profile": {
+      "name": "BielLeme",
+      "level": 5,
+      "xp": 1850,
+      "badges": [
+        "badge_1",
+        "badge_2"
+      ],
+      "avatar": "⚡",
+      "rankTitle": "Arquiteta SAP & Mestre em ABAP"
+    },
+    "answerHistory": [],
+    "currentCode": "",
+    "theme": "light",
+    "version": "1.3.0",
+    "savedAt": "2026-09-25T11:38:56.127Z"
+  }
+}

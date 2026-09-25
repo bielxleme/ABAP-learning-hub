@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Trophy, 
   Flame, 
@@ -28,15 +28,31 @@ import {
   ChevronRight,
   Swords,
   Bell,
-  BellRing
+  BellRing,
+  Cloud,
+  CloudDownload,
+  CloudUpload,
+  Download,
+  FileUp,
+  RefreshCw,
+  Smartphone,
+  ShieldCheck as ShieldCheckIcon
 } from 'lucide-react';
-import { UserProfile, UserAnswerHistory, UserErrorRecord, RpgRace } from '../types';
+import { UserProfile, UserAnswerHistory, UserErrorRecord, RpgRace, AppUserDataBackup } from '../types';
 import { INITIAL_BADGES } from '../data/sapReference';
 import { ErrorDiagnosticPanel } from './ErrorDiagnosticPanel';
 import { analyzeUserBehavior } from '../utils/userBehaviorAnalyzer';
 import { RPG_RACES, getRpgClassForLevel, ALL_RPG_RACES } from '../data/rpgAvatars';
 import { RpgAvatarRenderer } from './RpgAvatarRenderer';
 import { sendStudyReminder } from '../utils/notificationService';
+import {
+  assembleBackupData,
+  saveBackupToCloud,
+  exportBackupToFile,
+  importBackupFromFile,
+  applyRestoredBackup,
+  formatBackupDate
+} from '../utils/backupManager';
 
 interface ProgressProfileProps {
   userProfile: UserProfile;
@@ -48,6 +64,9 @@ interface ProgressProfileProps {
   onPracticeTopic?: (category: 'SELECT_SQL' | 'INTERNAL_TABLES' | 'PUNCTUATION_PERIOD' | 'DATA_DECLARATION') => void;
   onClearResolvedErrors?: () => void;
   onOpenNotificationSettings?: () => void;
+  currentCode?: string;
+  onRestoreBackup?: (backup: AppUserDataBackup) => void;
+  initialTab?: 'overview' | 'behavior' | 'rpg' | 'diagnostics' | 'history' | 'backup';
 }
 
 export const ProgressProfile: React.FC<ProgressProfileProps> = ({
@@ -60,13 +79,72 @@ export const ProgressProfile: React.FC<ProgressProfileProps> = ({
   onPracticeTopic,
   onClearResolvedErrors,
   onOpenNotificationSettings,
+  currentCode,
+  onRestoreBackup,
+  initialTab,
 }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'behavior' | 'rpg' | 'diagnostics' | 'history'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'behavior' | 'rpg' | 'diagnostics' | 'history' | 'backup'>(initialTab || 'overview');
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(userProfile.name);
   const [historyFilter, setHistoryFilter] = useState<'all' | 'correct' | 'wrong'>('all');
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [testNotifMessage, setTestNotifMessage] = useState<string | null>(null);
+
+  // Backup & Cloud Sync States
+  const [syncStatusMessage, setSyncStatusMessage] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [lastSyncDate, setLastSyncDate] = useState<string | null>(() => {
+    return typeof window !== 'undefined' ? localStorage.getItem('sap_abap_last_cloud_sync_timestamp') : null;
+  });
+
+  const handleManualCloudSync = async () => {
+    setIsSyncing(true);
+    setSyncStatusMessage(null);
+    try {
+      const backupData = assembleBackupData(userProfile, answerHistory, currentCode || '', undefined);
+      const res = await saveBackupToCloud(backupData);
+      if (res.success) {
+        setSyncStatusMessage('✅ Backup sincronizado com sucesso na nuvem! Se você desinstalar e reinstalar o app, poderá restaurar seu perfil imediatamente.');
+        setLastSyncDate(res.savedAt);
+      } else {
+        setSyncStatusMessage(`❌ ${res.message}`);
+      }
+    } catch (err: any) {
+      setSyncStatusMessage(`❌ Erro ao sincronizar: ${err?.message || 'Falha de conexão'}`);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleExportJson = () => {
+    const backupData = assembleBackupData(userProfile, answerHistory, currentCode || '', undefined);
+    exportBackupToFile(backupData);
+    setSyncStatusMessage('📥 Arquivo de backup exportado! Salve-o no seu dispositivo ou Google Drive para guardar uma cópia física.');
+  };
+
+  const handleImportJson = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const backup = await importBackupFromFile(file);
+      if (onRestoreBackup) {
+        onRestoreBackup(backup);
+      } else {
+        applyRestoredBackup(backup);
+      }
+      setSyncStatusMessage('✅ Backup importado com sucesso! Dados, progresso e histórico atualizados.');
+    } catch (err: any) {
+      setSyncStatusMessage(`❌ Erro ao importar arquivo: ${err?.message}`);
+    } finally {
+      e.target.value = '';
+    }
+  };
 
   const heroRace: RpgRace = userProfile.rpgRace || 'guerreiro';
   const raceMeta = RPG_RACES[heroRace] || RPG_RACES.guerreiro;
@@ -388,11 +466,79 @@ export const ProgressProfile: React.FC<ProgressProfileProps> = ({
           <BookOpen className="w-4 h-4" />
           <span>Histórico ({answerHistory.length})</span>
         </button>
+
+        <button
+          onClick={() => setActiveTab('backup')}
+          className={`px-3 py-2 rounded-t-lg transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+            activeTab === 'backup'
+              ? 'border-b-2 border-indigo-600 text-indigo-700 bg-indigo-50/60 font-bold'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <Cloud className="w-4 h-4 text-indigo-600" />
+          <span>Backup & Nuvem</span>
+          <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-1.5 py-0.2 rounded-full">
+            Reinstalação Segura
+          </span>
+        </button>
       </div>
+
+      {/* Cloud Status / Action Feedback Message */}
+      {syncStatusMessage && (
+        <div className="p-3 bg-indigo-50 border border-indigo-300 rounded-xl text-indigo-900 text-xs flex items-center justify-between gap-2 animate-in fade-in">
+          <span>{syncStatusMessage}</span>
+          <button
+            type="button"
+            onClick={() => setSyncStatusMessage(null)}
+            className="text-indigo-600 hover:text-indigo-950 font-bold text-xs px-2 py-0.5"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* TAB 1: OVERVIEW & BADGES */}
       {activeTab === 'overview' && (
         <div className="space-y-6">
+          {/* Cloud Sync Reassurance Bar */}
+          <div className="bg-gradient-to-r from-indigo-950 via-slate-900 to-blue-950 text-white rounded-xl p-3.5 shadow-md border border-indigo-500/40 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-400/40 flex items-center justify-center shrink-0">
+                <Cloud className="w-4 h-4 text-indigo-400" />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <span>Proteção Pós-Desinstalação: Sincronização em Nuvem Ativa</span>
+                  <span className="bg-emerald-500/20 text-emerald-300 text-[10px] border border-emerald-400/40 px-1.5 py-0.2 rounded-full font-semibold">
+                    100% Salvo
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-300">
+                  {lastSyncDate ? `Última sincronização na nuvem: ${formatBackupDate(lastSyncDate)}` : 'Seu progresso é salvo no servidor para que você possa restaurá-lo após reinstalar o app.'}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <button
+                type="button"
+                onClick={handleManualCloudSync}
+                disabled={isSyncing}
+                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+                <span>{isSyncing ? 'Sincronizando...' : 'Fazer Backup Agora'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('backup')}
+                className="px-2.5 py-1.5 bg-white/10 hover:bg-white/20 text-indigo-200 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+              >
+                Gerenciar
+              </button>
+            </div>
+          </div>
           {/* Real-Time Behavioral Pattern Summary (Shown whenever user opens Profile) */}
           <div className="bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#1e40af] text-white rounded-xl p-5 shadow-lg border border-blue-500/40 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
@@ -1028,6 +1174,183 @@ export const ProgressProfile: React.FC<ProgressProfileProps> = ({
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* TAB 6: BACKUP & REINSTALLATION RECOVERY */}
+      {activeTab === 'backup' && (
+        <div className="space-y-6 animate-in fade-in">
+          {/* Main Informational Hero */}
+          <div className="bg-gradient-to-r from-indigo-900 via-blue-900 to-slate-900 text-white rounded-xl p-5 shadow-lg border border-indigo-500/40 space-y-3">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-500/30 border border-indigo-400/50 flex items-center justify-center shrink-0">
+                <CloudDownload className="w-5 h-5 text-indigo-300" />
+              </div>
+              <div>
+                <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                  <span>Proteção e Continuidade Pós-Desinstalação</span>
+                  <span className="bg-emerald-400 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
+                    Garantido
+                  </span>
+                </h3>
+                <p className="text-xs text-indigo-200">
+                  Seus dados de estudo (níveis, XP, conquistas e códigos ABAP) protegidos para quando você reinstalar o app.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3 bg-black/30 rounded-lg border border-white/10 text-xs text-slate-200 leading-relaxed">
+              <span className="font-bold text-amber-300">Como funciona a persistência?</span> Ao desinstalar qualquer aplicativo no Android ou Desktop, o sistema operacional limpa o cache local por privacidade. Para garantir que nada seja perdido, o <strong>SAP ABAP Learning Hub</strong> salva seu progresso na nuvem do servidor e permite baixar cópias de segurança em arquivo <code>.json</code>.
+            </div>
+          </div>
+
+          {/* Action Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Card 1: Cloud Sync */}
+            <div className="bg-white dark:bg-slate-900 rounded-xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs space-y-4 flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2.5">
+                    <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 border border-blue-200 dark:border-blue-800">
+                      <Cloud className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900 dark:text-white text-sm">
+                        Sincronização em Nuvem
+                      </h4>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Servidor central do SAP Hub
+                      </p>
+                    </div>
+                  </div>
+                  <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Ativo
+                  </span>
+                </div>
+
+                <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700/60 space-y-2 text-xs">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500 dark:text-slate-400">Usuário vinculado:</span>
+                    <strong className="text-slate-800 dark:text-white font-mono">{userProfile.name}</strong>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500 dark:text-slate-400">Progresso atual:</span>
+                    <span className="text-blue-600 dark:text-blue-400 font-semibold">Nível {userProfile.level} ({userProfile.xp} XP)</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500 dark:text-slate-400">Conquistas salvas:</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{userProfile.badges.length} medalhas</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-1 border-t border-slate-200 dark:border-slate-700">
+                    <span className="text-slate-500 dark:text-slate-400">Último backup salvo:</span>
+                    <span className="text-slate-700 dark:text-slate-300 font-mono text-[11px]">
+                      {lastSyncDate ? formatBackupDate(lastSyncDate) : 'Pendente de sincronização'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleManualCloudSync}
+                disabled={isSyncing}
+                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg font-bold text-xs sm:text-sm shadow-xs transition flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                <span>{isSyncing ? 'Sincronizando com a Nuvem...' : 'Sincronizar com a Nuvem Agora'}</span>
+              </button>
+            </div>
+
+            {/* Card 2: Physical JSON File Export & Import */}
+            <div className="bg-white dark:bg-slate-900 rounded-xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs space-y-4 flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2.5">
+                  <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 border border-emerald-200 dark:border-emerald-800">
+                    <Download className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 dark:text-white text-sm">
+                      Arquivo Físico de Backup (.json)
+                    </h4>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Guarde no celular, PC ou Google Drive
+                    </p>
+                  </div>
+                </div>
+
+                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                  Baixe um arquivo contendo 100% dos seus dados (perfil, respostas, streak e códigos). Você pode restaurar este arquivo a qualquer momento mesmo sem nenhuma conexão com a internet.
+                </p>
+
+                <div className="pt-1 flex flex-col sm:flex-row gap-2">
+                  <button
+                    type="button"
+                    onClick={handleExportJson}
+                    className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Baixar Arquivo .json</span>
+                  </button>
+
+                  <label className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg font-bold text-xs shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer">
+                    <FileUp className="w-3.5 h-3.5 text-indigo-500" />
+                    <span>Importar .json</span>
+                    <input
+                      type="file"
+                      accept=".json,application/json"
+                      onChange={handleImportJson}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              <div className="text-[10px] text-slate-400 dark:text-slate-500 text-center">
+                Compatível com versões Desktop Windows 11, Celulares Android e Navegadores.
+              </div>
+            </div>
+          </div>
+
+          {/* Guide: Step-by-Step Restoration */}
+          <div className="bg-slate-50 dark:bg-slate-900/60 rounded-xl p-5 border border-slate-200 dark:border-slate-800 space-y-3">
+            <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-2">
+              <ShieldCheckIcon className="w-4 h-4 text-emerald-500" />
+              <span>Passo a Passo: Como recuperar meus dados se eu desinstalar o app?</span>
+            </h4>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div className="p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 space-y-1">
+                <div className="font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
+                  <span className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-center text-xs flex items-center justify-center">1</span>
+                  <span>Reinstale o App</span>
+                </div>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Baixe novamente o aplicativo no Android ou execute o instalador do Windows 11.
+                </p>
+              </div>
+
+              <div className="p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 space-y-1">
+                <div className="font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5">
+                  <span className="w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 text-center text-xs flex items-center justify-center">2</span>
+                  <span>Clique em Restaurar</span>
+                </div>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Na tela de Logon SAP inicial, clique na aba <strong>"Recuperar / Restaurar Backup"</strong>.
+                </p>
+              </div>
+
+              <div className="p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 space-y-1">
+                <div className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                  <span className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 text-center text-xs flex items-center justify-center">3</span>
+                  <span>Pronto! 100% De Volta</span>
+                </div>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                  O sistema reconhece seu perfil na nuvem ou lê seu arquivo e recupera todo o seu XP e progresso.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

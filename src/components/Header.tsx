@@ -21,7 +21,8 @@ import {
   RefreshCw,
   Monitor,
   Play,
-  ArrowUpCircle
+  ArrowUpCircle,
+  Cloud
 } from 'lucide-react';
 import { UserProfile } from '../types';
 import { PWAInstallButton } from './PWAInstallButton';
@@ -37,6 +38,7 @@ interface HeaderProps {
   onOpenNotifications?: () => void;
   onOpenUpdates?: () => void;
   onOpenWindowsInstaller?: () => void;
+  onOpenBackup?: () => void;
   theme?: 'light' | 'dark';
   toggleTheme?: () => void;
 }
@@ -51,6 +53,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenNotifications,
   onOpenUpdates,
   onOpenWindowsInstaller,
+  onOpenBackup,
   theme = 'light',
   toggleTheme,
 }) => {
@@ -162,6 +165,18 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <Monitor className="w-3.5 h-3.5 text-sky-400" />
               <span className="hidden xl:inline text-[11px]">Windows 11</span>
+            </button>
+          )}
+
+          {/* Cloud Backup Protection Button */}
+          {onOpenBackup && (
+            <button
+              onClick={onOpenBackup}
+              title="Backup em Nuvem e Proteção de Dados (para recuperação após reinstalação)"
+              className="px-2 py-1 rounded text-slate-300 hover:text-indigo-300 hover:bg-slate-700/60 transition-colors cursor-pointer hidden md:flex items-center gap-1 text-xs border border-indigo-600/30 bg-indigo-950/40"
+            >
+              <Cloud className="w-3.5 h-3.5 text-indigo-400" />
+              <span className="hidden xl:inline text-[11px]">Nuvem</span>
             </button>
           )}
 
