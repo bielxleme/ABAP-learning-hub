@@ -57,7 +57,21 @@ Como posso ajudar no seu aprendizado hoje? Escolha uma das sugestões abaixo ou 
   const [includeEditorCode, setIncludeEditorCode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [isOnline, setIsOnline] = useState<boolean>(() =>
+    typeof navigator !== 'undefined' ? navigator.onLine : true
+  );
   const chatBottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -77,6 +91,20 @@ Como posso ajudar no seu aprendizado hoje? Escolha uma das sugestões abaixo ou 
 
     setMessages((prev) => [...prev, userMsg]);
     setInputMessage('');
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: 'offline_' + Date.now(),
+          role: 'assistant',
+          text: '📡 **Você está sem conexão com a internet no momento.**\n\nO assistente IA em nuvem necessita de rede para responder. No entanto, lembre-se de que a grande maioria do aplicativo continua funcionando normalmente e de forma **100% offline**:\n\n• **Quizzes & Simulado SAP** (Questões, gabaritos e explicações locais)\n• **Editor ABAP SE38** (Escrever, verificar sintaxe e executar com depurador)\n• **Dicionário SE11 & Referência** (Estruturas de tabelas MARA, VBAK, comandos)\n• **Seu Progresso & Conquistas** (Salvos localmente no seu dispositivo)\n\nAssim que você se conectar novamente, o mentor responderá normalmente!',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        },
+      ]);
+      return;
+    }
+
     setIsLoading(true);
     onAskAi();
 
@@ -111,13 +139,16 @@ Como posso ajudar no seu aprendizado hoje? Escolha uma das sugestões abaixo ou 
 
       setMessages((prev) => [...prev, assistantMsg]);
     } catch (err: any) {
+      const isNetworkOffline = !navigator.onLine || err?.message?.includes('Failed to fetch') || err?.message?.includes('NetworkError');
       const isHighDemand =
         err?.message?.includes('alta demanda') ||
         err?.message?.includes('503') ||
         err?.message?.includes('high demand') ||
         err?.message?.includes('UNAVAILABLE');
 
-      const errorText = isHighDemand
+      const errorText = isNetworkOffline
+        ? '📡 Sem conexão com a internet. O assistente IA em nuvem precisa de internet. Os Quizzes, Editor SE38 e Dicionário funcionam normalmente offline!'
+        : isHighDemand
         ? '⏳ O serviço de IA está enfrentando alta demanda temporária. O sistema tentou modelos alternativos, mas a rede está congestionada. Por favor, tente reenviar sua pergunta em alguns instantes.'
         : (err?.message || 'Houve uma falha ao conectar com o serviço do SAP Mentor AI. Verifique sua conexão e tente novamente.');
 
@@ -179,6 +210,18 @@ Como posso ajudar no seu aprendizado hoje? Escolha uma das sugestões abaixo ou 
           <span className="hidden sm:inline">Limpar</span>
         </button>
       </div>
+
+      {/* Offline Status Notice */}
+      {!isOnline && (
+        <div className="bg-amber-500/15 border-b border-amber-500/30 px-4 py-2 flex items-center justify-between text-xs text-amber-900 bg-amber-50">
+          <div className="flex items-center space-x-2">
+            <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping shrink-0" />
+            <span>
+              <strong>Modo Offline:</strong> O assistente de IA em nuvem requer internet. <strong>Quizzes</strong>, <strong>Editor SE38</strong>, <strong>Depurador</strong> e <strong>Dicionário</strong> funcionam 100% offline!
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Messages Scroll Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/50">

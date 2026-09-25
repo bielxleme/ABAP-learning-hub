@@ -94,6 +94,159 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok", service: "SAP ABAP Learning Hub" });
 });
 
+// App Version & Real-time Update Info
+const CURRENT_APP_VERSION = "1.3.0";
+const CURRENT_BUILD_TIMESTAMP = "2026-09-25T11:00:00Z";
+const CURRENT_RELEASE_NOTES = [
+  "Notificações em tempo real com indicador visual no aplicativo para Web, Android e Desktop",
+  "Instalador nativo e atalhos otimizados para Windows 11 (Área de Trabalho e Menu Iniciar)",
+  "Suporte completo a funcionamento offline sem internet para Windows 11 Desktop, Android e Web",
+  "API de Notificações para lembretes diários e proteção da sequência de estudos (streak)",
+  "Exclusão de perfis na lixeira com diálogo interno seguro e limpeza de dados locais"
+];
+
+// Active SSE client connections for real-time updates
+const sseClients = new Set<express.Response>();
+
+app.get("/api/version", (req, res) => {
+  res.json({
+    version: CURRENT_APP_VERSION,
+    buildTimestamp: CURRENT_BUILD_TIMESTAMP,
+    releaseNotes: CURRENT_RELEASE_NOTES,
+    minSupportedVersion: "1.0.0",
+    updateAvailable: false, // Baseline: current deployed version
+    serverTime: new Date().toISOString()
+  });
+});
+
+// Server-Sent Events (SSE) for Real-Time App Updates
+app.get("/api/updates/stream", (req, res) => {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders?.();
+
+  sseClients.add(res);
+
+  // Send initial handshake
+  res.write(`data: ${JSON.stringify({
+    type: "connected",
+    version: CURRENT_APP_VERSION,
+    buildTimestamp: CURRENT_BUILD_TIMESTAMP,
+    timestamp: Date.now()
+  })}\n\n`);
+
+  // Keep-alive heartbeat every 25 seconds
+  const heartbeat = setInterval(() => {
+    try {
+      res.write(`: heartbeat\n\n`);
+    } catch {
+      clearInterval(heartbeat);
+    }
+  }, 25000);
+
+  req.on("close", () => {
+    clearInterval(heartbeat);
+    sseClients.delete(res);
+  });
+});
+
+// Windows 11 Installer Download Endpoint
+app.get("/api/download/windows-installer", (req, res) => {
+  const protocol = req.protocol || "https";
+  const host = req.get("host") || "ais-dev-xeo2szl7px7lbbljrmijwg-702341020848.us-west2.run.app";
+  const appUrl = `${protocol}://${host}`;
+
+  const batContent = `@echo off
+chcp 65001 >nul
+title Instalador Desktop SAP ABAP Learning Hub - Windows 11
+color 1F
+
+echo ==============================================================================
+echo              SAP ABAP LEARNING HUB - INSTALADOR WINDOWS 11
+echo ==============================================================================
+echo.
+echo   Este instalador configura o SAP ABAP Learning Hub como aplicativo
+echo   nativo para a sua área de trabalho e menu Iniciar do Windows 11.
+echo.
+echo ==============================================================================
+echo.
+
+set "APP_NAME=SAP ABAP Learning Hub"
+set "APP_URL=${appUrl}"
+set "APP_DIR=%LOCALAPPDATA%\\SAP_ABAP_LearningHub"
+
+if not exist "%APP_DIR%" mkdir "%APP_DIR%"
+
+set "BROWSER_PATH="
+if exist "%ProgramFiles(x86)%\\Microsoft\\Edge\\Application\\msedge.exe" (
+    set "BROWSER_PATH=%ProgramFiles(x86)%\\Microsoft\\Edge\\Application\\msedge.exe"
+) else if exist "%ProgramFiles%\\Microsoft\\Edge\\Application\\msedge.exe" (
+    set "BROWSER_PATH=%ProgramFiles%\\Microsoft\\Edge\\Application\\msedge.exe"
+) else if exist "%ProgramFiles%\\Google\\Chrome\\Application\\chrome.exe" (
+    set "BROWSER_PATH=%ProgramFiles%\\Google\\Chrome\\Application\\chrome.exe"
+) else if exist "%ProgramFiles(x86)%\\Google\\Chrome\\Application\\chrome.exe" (
+    set "BROWSER_PATH=%ProgramFiles(x86)%\\Google\\Chrome\\Application\\chrome.exe"
+) else (
+    set "BROWSER_PATH=msedge.exe"
+)
+
+echo [✓] Navegador Windows 11 detectado: %BROWSER_PATH%
+echo [..] Baixando ícone da aplicação SAP...
+powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; (New-Object Net.WebClient).DownloadFile('%APP_URL%/pwa-192x192.png', '%APP_DIR%\\app-icon.png')" >nul 2>&1
+
+echo [..] Criando atalhos na Área de Trabalho e Menu Iniciar...
+powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+  "$WshShell = New-Object -ComObject WScript.Shell; " ^
+  "$DesktopPath = [Environment]::GetFolderPath('Desktop'); " ^
+  "$StartMenuPath = [Environment]::GetFolderPath('Programs'); " ^
+  "$AppDir = '%APP_DIR%'; " ^
+  "$Browser = '%BROWSER_PATH%'; " ^
+  "$Url = '%APP_URL%'; " ^
+  "$ShortcutDesktop = $WshShell.CreateShortcut(\\"$DesktopPath\\SAP ABAP Learning Hub.lnk\\"); " ^
+  "$ShortcutDesktop.TargetPath = $Browser; " ^
+  "$ShortcutDesktop.Arguments = \\"--app=$Url --window-size=1280,820 --app-id=sap-abap-hub\\"; " ^
+  "$ShortcutDesktop.Description = 'SAP ABAP Learning Hub - Ambiente de Aprendizado Interativo ABAP 7.40+'; " ^
+  "$ShortcutDesktop.WorkingDirectory = $AppDir; " ^
+  "$ShortcutDesktop.Save(); " ^
+  "$ShortcutStart = $WshShell.CreateShortcut(\\"$StartMenuPath\\SAP ABAP Learning Hub.lnk\\"); " ^
+  "$ShortcutStart.TargetPath = $Browser; " ^
+  "$ShortcutStart.Arguments = \\"--app=$Url --window-size=1280,820 --app-id=sap-abap-hub\\"; " ^
+  "$ShortcutStart.Description = 'SAP ABAP Learning Hub'; " ^
+  "$ShortcutStart.WorkingDirectory = $AppDir; " ^
+  "$ShortcutStart.Save(); "
+
+echo [✓] Atalho criado na Área de Trabalho!
+echo [✓] Atalho criado no Menu Iniciar do Windows 11!
+echo.
+echo ==============================================================================
+echo                 INSTALAÇÃO CONCLUÍDA COM SUCESSO!
+echo ==============================================================================
+echo.
+echo   O aplicativo agora está pronto na sua Área de Trabalho e Menu Iniciar.
+echo   Ele abrirá em janela própria independente, sem barras de navegador.
+echo.
+
+set /p INICIAR="Deseja iniciar o SAP ABAP Learning Hub agora? (S/N): "
+if /i "%INICIAR%"=="S" (
+    start "" "%BROWSER_PATH%" --app="%APP_URL%" --window-size=1280,820 --app-id=sap-abap-hub
+)
+
+exit /b 0
+`;
+
+  res.setHeader("Content-Disposition", 'attachment; filename="Instalar-SAP-ABAP-Hub-Windows11.bat"');
+  res.setHeader("Content-Type", "application/x-bat; charset=utf-8");
+  res.send(batContent);
+});
+
+// Digital Asset Links for Android TWA Google Play Store
+app.get("/.well-known/assetlinks.json", (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  const assetLinksPath = path.join(process.cwd(), "public", ".well-known", "assetlinks.json");
+  res.sendFile(assetLinksPath);
+});
+
 // Chat endpoint
 app.post("/api/chat", async (req, res) => {
   try {

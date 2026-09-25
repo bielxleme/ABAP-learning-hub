@@ -19,6 +19,8 @@ import { MobileBottomNav } from './components/MobileBottomNav';
 import { StreakRewardToast } from './components/StreakRewardToast';
 import { StudyReminderNotification } from './components/StudyReminderNotification';
 import { StudyNotificationModal } from './components/StudyNotificationModal';
+import { AppUpdateModal } from './components/AppUpdateModal';
+import { DesktopWindowsModal } from './components/DesktopWindowsModal';
 import { checkStudyReminderDue, sendStudyReminder } from './utils/notificationService';
 import { processDailyExerciseReward } from './utils/dailyStreakTracker';
 import { simulateAbapExecution } from './utils/abapLinter';
@@ -84,6 +86,12 @@ export default function App() {
   // Study Notification Modal State
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState<boolean>(false);
 
+  // Real-Time Live Update Modal State
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState<boolean>(false);
+
+  // Windows 11 Desktop Installer Modal State
+  const [isWindowsModalOpen, setIsWindowsModalOpen] = useState<boolean>(false);
+
   // Current User Profile State - Defaults to Convidado (Guest) as requested
   const [userProfile, setUserProfile] = useState<UserProfile>(() => {
     if (typeof window !== 'undefined') {
@@ -126,6 +134,27 @@ export default function App() {
       if (userProfile.soundEnabled) sounds.playLevelUp();
     }
   };
+
+  const handleSaveNotificationSettings = (settings: StudyNotificationSettings) => {
+    setUserProfile((prev) => ({
+      ...prev,
+      notificationSettings: settings,
+    }));
+  };
+
+  // Periodic Daily Study Reminder check
+  useEffect(() => {
+    const checkReminder = () => {
+      if (userProfile.notificationSettings?.enabled) {
+        if (checkStudyReminderDue(userProfile)) {
+          sendStudyReminder(userProfile);
+        }
+      }
+    };
+    checkReminder();
+    const interval = setInterval(checkReminder, 1000 * 60 * 30); // Check every 30 minutes
+    return () => clearInterval(interval);
+  }, [userProfile]);
 
   // Individual Answer History State for the active user
   const [answerHistory, setAnswerHistory] = useState<UserAnswerHistory[]>(() => {
@@ -485,6 +514,9 @@ export default function App() {
           setGlossaryOverlayInitialTerm('SELECT');
           setIsGlossaryOverlayOpen(true);
         }}
+        onOpenNotifications={() => setIsNotificationModalOpen(true)}
+        onOpenUpdates={() => setIsUpdateModalOpen(true)}
+        onOpenWindowsInstaller={() => setIsWindowsModalOpen(true)}
         theme={theme}
         toggleTheme={toggleTheme}
       />
@@ -630,7 +662,33 @@ export default function App() {
       />
 
       {/* Live Application Update Notification (Android & Desktop) */}
-      <AppUpdateToast />
+      <AppUpdateToast onOpenModal={() => setIsUpdateModalOpen(true)} />
+
+      {/* Real-Time Live Update Details & Testing Modal */}
+      <AppUpdateModal
+        isOpen={isUpdateModalOpen}
+        onClose={() => setIsUpdateModalOpen(false)}
+      />
+
+      {/* Windows 11 Desktop Installer Modal */}
+      <DesktopWindowsModal
+        isOpen={isWindowsModalOpen}
+        onClose={() => setIsWindowsModalOpen(false)}
+      />
+
+      {/* Daily Study Reminder Notification Alert */}
+      <StudyReminderNotification
+        onGoToQuiz={() => setActiveTab('quiz')}
+        onOpenSettings={() => setIsNotificationModalOpen(true)}
+      />
+
+      {/* Study Notification Settings Modal */}
+      <StudyNotificationModal
+        isOpen={isNotificationModalOpen}
+        onClose={() => setIsNotificationModalOpen(false)}
+        userProfile={userProfile}
+        onUpdateSettings={handleSaveNotificationSettings}
+      />
 
       {/* Offline Status Toast */}
       <OfflineIndicator />

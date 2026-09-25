@@ -1,0 +1,45 @@
+{
+  "packageId": "app.sap.abap.hub",
+  "host": "ais-dev-xeo2szl7px7lbbljrmijwg-702341020848.us-west2.run.app",
+  "name": "SAP ABAP Learning Hub",
+  "launcherName": "SAP ABAP",
+  "themeColor": "#1b2a4a",
+  "themeColorDark": "#0f172a",
+  "navigationColor": "#1b2a4a",
+  "navigationColorDark": "#0f172a",
+  "backgroundColor": "#1b2a4a",
+  "enableNotifications": true,
+  "startUrl": "/",
+  "iconUrl": "https://ais-dev-xeo2szl7px7lbbljrmijwg-702341020848.us-west2.run.app/pwa-512x512.png",
+  "maskableIconUrl": "https://ais-dev-xeo2szl7px7lbbljrmijwg-702341020848.us-west2.run.app/pwa-maskable-512x512.png",
+  "appVersionName": "1.3.0",
+  "appVersionCode": 13,
+  "shortcuts": [
+    {
+      "name": "Quizzes ABAP",
+      "shortName": "Quizzes",
+      "url": "/?tab=quiz",
+      "icon": "https://ais-dev-xeo2szl7px7lbbljrmijwg-702341020848.us-west2.run.app/pwa-192x192.png"
+    },
+    {
+      "name": "Editor SE38",
+      "shortName": "Editor",
+      "url": "/?tab=editor",
+      "icon": "https://ais-dev-xeo2szl7px7lbbljrmijwg-702341020848.us-west2.run.app/pwa-192x192.png"
+    }
+  ],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://ais-dev-xeo2szl7px7lbbljrmijwg-702341020848.us-west2.run.app/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {
+    "playBilling": {
+      "enabled": false
+    },
+    "locationDelegation": {
+      "enabled": false
+    }
+  },
+  "alphaDependencies": {
+    "enabled": false
+  }
+}

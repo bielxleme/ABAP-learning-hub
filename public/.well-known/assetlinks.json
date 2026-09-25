@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.sap.abap.hub",
+      "sha256_cert_fingerprints": [
+        "14:6D:E9:7D:0F:52:AB:FC:A7:EC:4D:2E:3D:A1:4D:8B:64:B3:C4:4E:91:D8:AC:3B:19:62:3C:99:9F:8F:D6:70"
+      ]
+    }
+  }
+]
