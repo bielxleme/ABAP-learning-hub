@@ -5,12 +5,16 @@ import './index.css';
 import { registerSW } from 'virtual:pwa-register';
 
 // Register PWA service worker with auto-update in production
-if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-  registerSW({
-    immediate: true,
-    onNeedRefresh() {},
-    onOfflineReady() {},
-  });
+if (typeof window !== 'undefined' && 'serviceWorker' in navigator && import.meta.env.PROD) {
+  try {
+    registerSW({
+      immediate: true,
+      onNeedRefresh() {},
+      onOfflineReady() {},
+    });
+  } catch (e) {
+    console.warn('SW registration skipped:', e);
+  }
 }
 
 createRoot(document.getElementById('root')!).render(
