@@ -130,8 +130,6 @@ export const SapLogonModal: React.FC<SapLogonModalProps> = ({
     localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify([defaultGuestUser]));
   }, [currentProfile]);
 
-  if (!isOpen) return null;
-
   const handleContinueAsGuest = () => {
     const guestUser: UserProfile = {
       name: 'Convidado SAP',
@@ -463,6 +461,8 @@ export const SapLogonModal: React.FC<SapLogonModalProps> = ({
     setSuccessMessage(`Usuário "${usernameToDelete}" foi excluído com sucesso do dispositivo.`);
     setErrorMessage('');
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto animate-in fade-in duration-200">

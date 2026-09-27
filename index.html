@@ -17,6 +17,57 @@
     <meta property="og:description" content="Aplicativo intuitivo, interativo e gamificado para aprender SAP ABAP com editor de código, validação de sintaxe, simulador de execução, quizzes por níveis, conquistas e tutor IA especializado em SAP." />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
+    <script>
+      window.$RefreshReg$ = window.$RefreshReg$ || function () {};
+      window.$RefreshSig$ = window.$RefreshSig$ || function () { return function (type) { return type; }; };
+
+      if (typeof window !== 'undefined') {
+        // HMR is disabled in this environment. Provide stub for vite-hmr to prevent connection errors
+        try {
+          const _OrigWebSocket = window.WebSocket;
+          if (_OrigWebSocket) {
+            window.WebSocket = function (url, protocols) {
+              if (protocols === 'vite-hmr' || protocols === 'vite-ping') {
+                const target = new EventTarget();
+                target.readyState = 1;
+                target.url = url;
+                target.protocol = protocols;
+                target.send = function () {};
+                target.close = function () {
+                  target.readyState = 3;
+                  target.dispatchEvent(new Event('close'));
+                };
+                setTimeout(function () {
+                  target.dispatchEvent(new Event('open'));
+                }, 0);
+                return target;
+              }
+              return new _OrigWebSocket(url, protocols);
+            };
+            window.WebSocket.prototype = _OrigWebSocket.prototype;
+            window.WebSocket.CONNECTING = 0;
+            window.WebSocket.OPEN = 1;
+            window.WebSocket.CLOSING = 2;
+            window.WebSocket.CLOSED = 3;
+          }
+        } catch (_) {}
+
+        // Suppress [vite] console errors per environment instructions
+        try {
+          const _origConsoleError = console.error;
+          console.error = function (...args) {
+            if (args.length > 0) {
+              const first = args[0];
+              const msg = typeof first === 'string' ? first : (first && first.message ? first.message : '');
+              if (typeof msg === 'string' && (msg.startsWith('[vite]') || msg.includes('WebSocket') || msg.includes('vite-hmr'))) {
+                return;
+              }
+            }
+            return _origConsoleError.apply(console, args);
+          };
+        } catch (_) {}
+      }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />

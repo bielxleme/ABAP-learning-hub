@@ -7,9 +7,11 @@ import { registerSW } from 'virtual:pwa-register';
 // Register PWA service worker with auto-update in production
 if (typeof window !== 'undefined' && 'serviceWorker' in navigator && import.meta.env.PROD) {
   try {
-    registerSW({
+    const updateSW = registerSW({
       immediate: true,
-      onNeedRefresh() {},
+      onNeedRefresh() {
+        updateSW(true);
+      },
       onOfflineReady() {},
     });
   } catch (e) {

@@ -632,74 +632,339 @@ ULINE.`,
     xpReward: 25,
   },
   {
-    id: 'n1_040',
+    id: 'n1_041',
+    level: 'Nível 1',
+    type: 'multiple_choice',
+    title: 'Tipagem de Dados: Conversão Implícita de Texto para Inteiro',
+    question: 'No contexto de Tipos e Conversão no SAP ABAP, qual é o comportamento do sistema ao atribuir uma variável do tipo C (texto) contendo dígitos para uma variável do tipo I (inteiro)?',
+    options: [
+      'O compilador ABAP bloqueia o programa acusando Type Incompatibility estrita.',
+      'O ABAP realiza a conversão automática (implícita) convertendo os caracteres numéricos no valor inteiro correspondente. Se houver caracteres não numéricos válidos, é disparada a exceção CX_SY_CONVERSION_NO_NUMBER.',
+      'O sistema sempre grava zero na variável inteira sem emitir nenhum aviso ou erro.',
+      'A conversão só é realizada com sucesso se o comando for executado dentro de uma função RFC.'
+    ],
+    correctAnswerIndex: 1,
+    explanation: 'O ABAP possui regras estritas de conversão automática entre tipos compatíveis: ao mover uma string ou caractere numérico para um campo inteiro (I), o valor é convertido. Caracteres inválidos disparam a exceção tratável CX_SY_CONVERSION_NO_NUMBER em tempo de execução.',
+    conceptTag: 'Tipos e Conversão',
+    xpReward: 25,
+  },
+  {
+    id: 'n1_042',
+    level: 'Nível 1',
+    type: 'multiple_choice',
+    title: 'Tipos Numéricos: Características do Tipo P (Packed Number)',
+    question: 'Por que o tipo elementar P (Packed Number / Decimais Compactados) é o tipo obrigatório para valores monetários e contábeis no SAP?',
+    options: [
+      'Porque ele armazena números em formato binário de ponto flutuante IEEE 754 de alta velocidade.',
+      'Porque utiliza codificação BCD (Binary Coded Decimal), garantindo precisão decimal exata sem erros de arredondamento inerentes ao ponto flutuante binário.',
+      'Porque o tipo P não ocupa espaço na memória RAM do servidor de aplicação.',
+      'Porque campos do tipo P são criptografados automaticamente pelo banco de dados.'
+    ],
+    correctAnswerIndex: 1,
+    explanation: 'Valores contábeis e financeiros exigem exatidão absoluta. O tipo P utiliza BCD (dois dígitos por byte + nibble de sinal), evitando inconsistências de frações decimais típicas de tipos binários (como o tipo F).',
+    conceptTag: 'Tipos e Conversão',
+    xpReward: 25,
+  },
+  {
+    id: 'n1_043',
+    level: 'Nível 1',
+    type: 'multiple_choice',
+    title: 'Conversão de Datas: Formato Interno vs Exibição',
+    question: 'A variável de sistema SY-DATUM armazena a data atual no formato interno YYYYMMDD (ex: 20260927). Como formatá-la na saída para o padrão local do usuário (ex: DD/MM/YYYY ou DD.MM.YYYY)?',
+    options: [
+      'Usando a instrução WRITE com formatação nativa ou a opção WRITE sy-datum DD/MM/YYYY.',
+      'Executando CONVERT DATE sy-datum TO USER FORMAT.',
+      'Somando 1000 dias à variável sy-datum.',
+      'O SAP não permite alterar a exibição de campos de data na tela clássica.'
+    ],
+    correctAnswerIndex: 0,
+    explanation: 'O comando WRITE sy-datum formata a data de acordo com as preferências regionais do usuário (cadastradas na SU01). Para saídas específicas, opções como WRITE sy-datum DD/MM/YYYY ou instruções com máscaras são utilizadas.',
+    conceptTag: 'Variáveis de Sistema',
+    xpReward: 25,
+  },
+  {
+    id: 'n1_044',
+    level: 'Nível 1',
+    type: 'multiple_choice',
+    title: 'Manipulação de Strings: Comando SPLIT',
+    question: 'Qual é o efeito da instrução "SPLIT lv_linha AT \',\' INTO lv_campo1 lv_campo2."?',
+    options: [
+      'Divide a string lv_linha no primeiro caractere de vírgula, atribuindo a parte antes da vírgula a lv_campo1 e o restante a lv_campo2.',
+      'Substitui todas as vírgulas de lv_linha por espaços em branco.',
+      'Concatena lv_campo1 e lv_campo2 adicionando uma vírgula entre eles.',
+      'Apaga a variável lv_linha da memória.'
+    ],
+    correctAnswerIndex: 0,
+    explanation: 'A instrução SPLIT divide uma string com base em um delimitador especificado (AT). Quando fornecidas variáveis de destino, distribui as partes nos campos sequencialmente.',
+    conceptTag: 'Manipulação de Strings',
+    xpReward: 25,
+  },
+  {
+    id: 'n1_045',
+    level: 'Nível 1',
+    type: 'multiple_choice',
+    title: 'Manipulação de Strings: Comando SHIFT para Zeros à Esquerda',
+    question: 'Ao ler um número de documento formatado com zeros à esquerda (ex: "0000123456"), qual comando é o padrão clássico do ABAP para remover os zeros à esquerda?',
+    options: [
+      'REMOVE LEADING ZEROS FROM lv_doc.',
+      'SHIFT lv_doc LEFT DELETING LEADING \'0\'.',
+      'TRIM lv_doc WITH ZERO.',
+      'DELETE \'0\' FROM lv_doc.'
+    ],
+    correctAnswerIndex: 1,
+    explanation: 'A instrução "SHIFT campo LEFT DELETING LEADING \'0\'." desloca o texto para a esquerda até que o primeiro caractere não seja zero, eliminando o preenchimento de zeros à esquerda.',
+    conceptTag: 'Manipulação de Strings',
+    xpReward: 25,
+  },
+  {
+    id: 'n1_046',
+    level: 'Nível 1',
+    type: 'multiple_choice',
+    title: 'Comando REPLACE em Strings',
+    question: 'Qual é a sintaxe correta no ABAP para substituir todas as ocorrências de um caractere ou palavra dentro de uma variável de texto?',
+    options: [
+      'REPLACE ALL OCCURRENCES OF \'antigo\' IN lv_texto WITH \'novo\'.',
+      'CHANGE ALL \'antigo\' TO \'novo\' IN lv_texto.',
+      'SUBSTITUTE \'antigo\' BY \'novo\' FOR lv_texto.',
+      'TRANSLATE lv_texto USING \'antigo/novo\'.'
+    ],
+    correctAnswerIndex: 0,
+    explanation: 'A sintaxe moderna e formal do ABAP para substituição múltipla é: REPLACE ALL OCCURRENCES OF <termo> IN <alvo> WITH <substituto>.',
+    conceptTag: 'Manipulação de Strings',
+    xpReward: 25,
+  },
+  {
+    id: 'n1_047',
+    level: 'Nível 1',
+    type: 'multiple_choice',
+    title: 'Função Embutida STRLEN vs NUMOFCHAR',
+    question: 'Qual é o comportamento da função embutida STRLEN( lv_texto ) em relação aos espaços no final da variável?',
+    options: [
+      'Conta sempre o tamanho máximo alocado na declaração DATA, incluindo todos os espaços.',
+      'Retorna o comprimento da string ignorando os espaços em branco finais (trailing spaces).',
+      'Retorna erro de sintaxe se a variável contiver espaços.',
+      'Retorna o número de palavras e não o número de caracteres.'
+    ],
+    correctAnswerIndex: 1,
+    explanation: 'A função STRLEN() calcula o número de caracteres até o último caractere não em branco, desconsiderando espaços em branco à direita (trailing spaces).',
+    conceptTag: 'Manipulação de Strings',
+    xpReward: 25,
+  },
+  {
+    id: 'n1_048',
+    level: 'Nível 1',
+    type: 'multiple_choice',
+    title: 'Operações Aritméticas: Operadores DIV e MOD',
+    question: 'Em uma expressão aritmética ABAP, qual é a diferença entre os operadores DIV e MOD?',
+    options: [
+      'DIV calcula a raiz quadrada e MOD calcula a porcentagem.',
+      'DIV realiza a divisão inteira (sem casas decimais) e MOD retorna o resto da divisão inteira.',
+      'DIV divide números com vírgula e MOD multiplica por dez.',
+      'Ambos são sinônimos do operador de barra inclinada (/).'
+    ],
+    correctAnswerIndex: 1,
+    explanation: 'DIV retorna a parte inteira do quociente (ex: 7 DIV 2 = 3), enquanto MOD retorna o resto da divisão (ex: 7 MOD 2 = 1).',
+    conceptTag: 'Operações Aritméticas',
+    xpReward: 25,
+  },
+  {
+    id: 'n1_049',
+    level: 'Nível 1',
+    type: 'multiple_choice',
+    title: 'Operações Aritméticas: Exponenciação',
+    question: 'Qual operador aritmético é utilizado em ABAP para elevar um número a uma potência (ex: 2 elevado a 3)?',
+    options: [
+      'O operador ^ (circunflexo)',
+      'O operador ** (dois asteriscos)',
+      'A função POWER( 2, 3 )',
+      'O operador exp( 2, 3 )'
+    ],
+    correctAnswerIndex: 1,
+    explanation: 'Em ABAP, a exponenciação é realizada com dois asteriscos consecutivos: lv_resultado = 2 ** 3. (resultando em 8).',
+    conceptTag: 'Operações Aritméticas',
+    xpReward: 25,
+  },
+  {
+    id: 'n1_050',
+    level: 'Nível 1',
+    type: 'multiple_choice',
+    title: 'Declaração com Cláusula LIKE vs TYPE',
+    question: 'Em um programa ABAP, qual é a diferença entre declarar "DATA: v1 TYPE mara-matnr." e "DATA: v2 LIKE v1."?',
+    options: [
+      'TYPE referencia um tipo de dado existente (no dicionário ou local), enquanto LIKE referencia as propriedades de um objeto de dados (outra variável já declarada).',
+      'TYPE só pode ser usado para números e LIKE só para texto.',
+      'LIKE foi descontinuado e não compila em versões recentes do SAP.',
+      'Não há nenhuma diferença, são estritamente sinônimos intercambiáveis.'
+    ],
+    correctAnswerIndex: 0,
+    explanation: 'TYPE aponta para a definição de um tipo abstrato (como um elemento de dados no SE11 ou um TYPES local). LIKE replica as características de uma variável concreta já instanciada no programa.',
+    conceptTag: 'Normas de Código ABAP',
+    xpReward: 25,
+  },
+  {
+    id: 'n1_051',
+    level: 'Nível 1',
+    type: 'multiple_choice',
+    title: 'Eventos de Relatório: INITIALIZATION',
+    question: 'Em que momento o bloco de evento INITIALIZATION é executado em um relatório executável (tipo 1)?',
+    options: [
+      'Após o usuário clicar no botão Executar (F8) na tela de seleção.',
+      'Uma única vez, antes da apresentação da tela de seleção para o usuário, ideal para preencher valores padrão dinâmicos.',
+      'Após o relatório ter imprimido todos os dados na tela.',
+      'Toda vez que o usuário pressiona a tecla Enter em um campo.'
+    ],
+    correctAnswerIndex: 1,
+    explanation: 'O evento INITIALIZATION é disparado antes da tela de seleção (Selection Screen) ser desenhada, permitindo ao desenvolvedor inicializar parâmetros, calcular datas padrão ou ler configurações.',
+    conceptTag: 'Interface de Usuário SE38',
+    xpReward: 25,
+  },
+  {
+    id: 'n1_052',
+    level: 'Nível 1',
+    type: 'multiple_choice',
+    title: 'Eventos de Relatório: AT SELECTION-SCREEN',
+    question: 'Para que serve o bloco de evento "AT SELECTION-SCREEN ON <campo>."?',
+    options: [
+      'Para validar a entrada do usuário naquele campo específico e, em caso de erro, emitir uma mensagem tipo E que mantém o cursor no campo.',
+      'Para mudar a cor de fundo da tela de seleção.',
+      'Para deletar os dados do campo do banco de dados.',
+      'Para fechar a janela do SAP GUI imediatamente.'
+    ],
+    correctAnswerIndex: 0,
+    explanation: 'AT SELECTION-SCREEN ON <campo> valida o valor digitado pelo usuário. Se for emitida uma mensagem do tipo E (Error) ou W (Warning), o SAP bloqueia a continuidade e posiciona o foco no campo com erro.',
+    conceptTag: 'Interface de Usuário SE38',
+    xpReward: 25,
+  },
+  {
+    id: 'n1_053',
+    level: 'Nível 1',
+    type: 'multiple_choice',
+    title: 'Eventos de Relatório: START-OF-SELECTION',
+    question: 'Qual é o papel do evento START-OF-SELECTION em programas ABAP?',
+    options: [
+      'Desenhar a tela de logon do SAP.',
+      'É o evento principal acionado após o usuário confirmar a tela de seleção (F8), onde se inicia a lógica de negócio e consultas de dados.',
+      'É executado quando o SAP é reiniciado pelo administrador da base.',
+      'Serve para salvar rascunhos no editor SE38.'
+    ],
+    correctAnswerIndex: 1,
+    explanation: 'START-OF-SELECTION é o coração dos relatórios executáveis: ele é chamado quando o usuário dispara a execução (F8), iniciando a busca e processamento de dados.',
+    conceptTag: 'Interface de Usuário SE38',
+    xpReward: 25,
+  },
+  {
+    id: 'n1_054',
+    level: 'Nível 1',
+    type: 'multiple_choice',
+    title: 'Controle de Fluxo: Instrução CHECK',
+    question: 'O que faz a instrução "CHECK <condição>." dentro de um bloco de código ou laço?',
+    options: [
+      'Gera um dump imediato no sistema.',
+      'Avalia a condição: se for verdadeira, continua a execução normal; se for falsa, encerra o processamento do evento ou pula para a próxima iteração do laço.',
+      'Marca uma caixa de seleção na interface gráfica.',
+      'Verifica se o usuário possui licença ativa na SAP.'
+    ],
+    correctAnswerIndex: 1,
+    explanation: 'CHECK age como um guard clause: se a condição lógica for falsa, ele sai do bloco de processamento atual (ou do laço com CONTINUE implícito), evitando aninhamentos excessivos de IF.',
+    conceptTag: 'Estruturas de Decisão',
+    xpReward: 25,
+  },
+  {
+    id: 'n1_055',
+    level: 'Nível 1',
+    type: 'multiple_choice',
+    title: 'Controle de Fluxo: EXIT vs CONTINUE em Laços',
+    question: 'Qual é a diferença entre as instruções EXIT e CONTINUE dentro de um laço DO ou WHILE em ABAP?',
+    options: [
+      'EXIT encerra o programa inteiro e CONTINUE cancela a transação.',
+      'CONTINUE pula imediatamente para a próxima iteração do laço, enquanto EXIT interrompe e finaliza o laço por completo.',
+      'CONTINUE é usado apenas em classes e EXIT apenas em tabelas.',
+      'Não há diferença técnica, ambos reiniciam o laço do começo.'
+    ],
+    correctAnswerIndex: 1,
+    explanation: 'CONTINUE interrompe apenas a iteração corrente e avança para a próxima volta do laço. EXIT abandona o laço definitivamente e continua a execução na linha seguinte ao ENDDO/ENDWHILE.',
+    conceptTag: 'Estruturas de Decisão',
+    xpReward: 25,
+  },
+  {
+    id: 'n1_056',
+    level: 'Nível 1',
+    type: 'multiple_choice',
+    title: 'Variável de Sistema: SY-INDEX em Laços DO/WHILE',
+    question: 'Durante a execução de um laço simples "DO 10 TIMES. ... ENDDO.", qual variável de sistema indica o número da iteração atual?',
+    options: [
+      'SY-TABIX',
+      'SY-INDEX',
+      'SY-DBCNT',
+      'SY-SUBRC'
+    ],
+    correctAnswerIndex: 1,
+    explanation: 'Em laços genéricos (DO ... ENDDO e WHILE ... ENDWHILE), a variável de sistema SY-INDEX armazena o contador de repetições (1, 2, 3...). SY-TABIX é utilizada em tabelas internas (LOOP AT).',
+    conceptTag: 'Ambiente de Execução SAP',
+    xpReward: 25,
+  },
+  {
+    id: 'n1_057',
+    level: 'Nível 1',
+    type: 'multiple_choice',
+    title: 'Tipagem de Dados: Comando MOVE-CORRESPONDING em Estruturas',
+    question: 'Em ABAP, o que realiza o comando "MOVE-CORRESPONDING struc1 TO struc2."?',
+    options: [
+      'Copia todos os dados de struc1 para struc2, ignorando os nomes dos campos.',
+      'Copia os valores apenas dos campos que possuem o mesmo nome em ambas as estruturas, independentemente da ordem física dos campos.',
+      'Apaga todos os dados da estrutura struc1.',
+      'Cria uma nova tabela no banco de dados com a junção das duas estruturas.'
+    ],
+    correctAnswerIndex: 1,
+    explanation: 'MOVE-CORRESPONDING compara os nomes dos componentes de duas estruturas e copia os valores dos campos com identificadores correspondentes (mesmo nome), convertendo tipos compatíveis automaticamente.',
+    conceptTag: 'Tipos e Conversão',
+    xpReward: 25,
+  },
+  {
+    id: 'n1_058',
     level: 'Nível 1',
     type: 'code_exercise',
-    title: 'Desafio: Concatenação com Separador',
-    question: 'Concatene as variáveis lv_prefixo e lv_sufixo dentro da variável lv_resultado separando-as por um hífen ("-").',
-    codeSnippet: `* Escreva a concatenação:`,
+    title: 'Desafio Prático: Remoção de Zeros à Esquerda',
+    question: 'Escreva a instrução clássica ABAP para remover os zeros à esquerda da variável lv_documento usando o comando SHIFT.',
+    codeSnippet: `* Remova os zeros à esquerda de lv_documento:`,
     expectedCodePatterns: {
-      requiredTokens: ['CONCATENATE', 'LV_PREFIXO', 'LV_SUFIXO', 'INTO', 'LV_RESULTADO', "SEPARATED BY '-'"],
-      sampleSolution: `CONCATENATE lv_prefixo lv_sufixo INTO lv_resultado SEPARATED BY '-'.`,
+      requiredTokens: ['SHIFT', 'LV_DOCUMENTO', 'LEFT', "DELETING LEADING '0'"],
+      sampleSolution: `SHIFT lv_documento LEFT DELETING LEADING '0'.`,
     },
-    explanation: 'Uso formal do comando CONCATENATE com SEPARATED BY \'-\'.',
+    explanation: 'A instrução SHIFT ... LEFT DELETING LEADING \'0\'. é amplamente utilizada no processamento de números de documentos e códigos SAP.',
+    conceptTag: 'Desafio de Código',
+    xpReward: 40,
+  },
+  {
+    id: 'n1_059',
+    level: 'Nível 1',
+    type: 'code_exercise',
+    title: 'Desafio Prático: Laço DO com Contador',
+    question: 'Escreva um laço DO que repita 5 vezes e, a cada volta, imprima o valor da iteração atual (sy-index) usando WRITE:. Finalize com ENDDO.',
+    codeSnippet: `* Escreva o laço DO 5 TIMES:`,
+    expectedCodePatterns: {
+      requiredTokens: ['DO 5 TIMES', 'WRITE', 'SY-INDEX', 'ENDDO'],
+      sampleSolution: `DO 5 TIMES.
+  WRITE: / sy-index.
+ENDDO.`,
+    },
+    explanation: 'Laço clássico de iterações finitas com inspeção da variável de sistema sy-index.',
+    conceptTag: 'Desafio de Código',
+    xpReward: 40,
+  },
+  {
+    id: 'n1_060',
+    level: 'Nível 1',
+    type: 'code_exercise',
+    title: 'Desafio Prático: Declaração de Constante ABAP',
+    question: 'Declare uma constante chamada gc_status do tipo C com tamanho 1 (LENGTH 1) e valor fixo \'A\'.',
+    codeSnippet: `* Declare a constante gc_status:`,
+    expectedCodePatterns: {
+      requiredTokens: ['CONSTANTS', 'GC_STATUS', 'TYPE C', "'A'"],
+      sampleSolution: `CONSTANTS: gc_status TYPE c LENGTH 1 VALUE 'A'.`,
+    },
+    explanation: 'Declaração formal de constante ABAP usando a palavra-chave CONSTANTS.',
     conceptTag: 'Desafio de Código',
     xpReward: 40,
   },
 ];
-
-// Gerar automaticamente o restante até 105 questões de alto nível técnico e didático para o Nível 1
-const CONCEITOS_N1 = [
-  { tag: 'Operações Aritméticas', prefix: 'Cálculo e Aritmética' },
-  { tag: 'Condicionais e Decisões', prefix: 'Estruturas de Decisão' },
-  { tag: 'Variáveis de Sistema', prefix: 'Ambiente de Execução SAP' },
-  { tag: 'Sintaxe e Boas Práticas', prefix: 'Normas de Código ABAP' },
-  { tag: 'Telas de Seleção', prefix: 'Interface de Usuário SE38' },
-  { tag: 'Tipos e Conversão', prefix: 'Tipagem de Dados' },
-  { tag: 'Relatórios Clássicos', prefix: 'Formatação de Listas' },
-];
-
-for (let i = 41; i <= 105; i++) {
-  const cat = CONCEITOS_N1[(i - 41) % CONCEITOS_N1.length];
-  const isCode = i % 5 === 0;
-
-  if (isCode) {
-    ABAP_QUESTIONS_LEVEL_1.push({
-      id: `n1_${String(i).padStart(3, '0')}`,
-      level: 'Nível 1',
-      type: 'code_exercise',
-      title: `Desafio Prático #${i}: ${cat.prefix} no ABAP`,
-      question: `Escreva um trecho de código ABAP válido que declare uma variável de apoio para ${cat.tag.toLowerCase()} e teste seu valor usando IF.`,
-      codeSnippet: `* Complete a lógica de validação:`,
-      expectedCodePatterns: {
-        requiredTokens: ['DATA', 'IF', 'ENDIF'],
-        sampleSolution: `DATA: lv_teste TYPE i VALUE ${i}.
-IF lv_teste > 0.
-  WRITE: / 'Valor positivo:', lv_teste.
-ENDIF.`,
-      },
-      explanation: `Exercício prático aplicando conceitos fundamentais de ${cat.tag} com verificação de condições e exibição na tela.`,
-      conceptTag: cat.tag,
-      xpReward: 40,
-    });
-  } else {
-    const qNum = i;
-    ABAP_QUESTIONS_LEVEL_1.push({
-      id: `n1_${String(qNum).padStart(3, '0')}`,
-      level: 'Nível 1',
-      type: 'multiple_choice',
-      title: `Questão #${qNum}: ${cat.prefix} (${cat.tag})`,
-      question: `No contexto de ${cat.tag} no SAP NetWeaver, qual das alternativas a seguir expressa a regra ou comportamento correto?`,
-      options: [
-        `As instruções de ${cat.tag} devem seguir a sintaxe formal terminando com ponto final (.) e respeitando o tipo de dado declarado.`,
-        `O compilador ABAP converte automaticamente qualquer erro de sintaxe em aviso informativo.`,
-        `O comando só pode ser utilizado dentro da transação SE11.`,
-        `A instrução ignora o mandante (SY-MANDT) e bloqueia a memória do servidor.`
-      ],
-      correctAnswerIndex: 0,
-      explanation: `Em SAP ABAP, o rigor sintático na gestão de ${cat.tag} garante integridade na execução e evita erros de tipo (Type Conflicts) ou dumps em tempo de execução.`,
-      conceptTag: cat.tag,
-      xpReward: 25,
-    });
-  }
-}

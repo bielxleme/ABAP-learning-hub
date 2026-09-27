@@ -380,64 +380,376 @@ SELECT-OPTIONS: s_matnr FOR mara-matnr.`,
     conceptTag: 'Desafio de Código',
     xpReward: 45,
   },
-];
-
-// Gerar automaticamente o restante até 105 questões de alto nível técnico para o Nível 2
-const CONCEITOS_N2 = [
-  { tag: 'Dicionário SE11', prefix: 'Modelagem de Tabelas' },
-  { tag: 'Tabelas Padrão SAP', prefix: 'Arquitetura de Dados' },
-  { tag: 'Consultas Open SQL', prefix: 'Cláusulas e Filtros' },
-  { tag: 'Índices e Performance', prefix: 'Otimização de Banco' },
-  { tag: 'Telas de Seleção', prefix: 'Ranges e SELECT-OPTIONS' },
-  { tag: 'Chaves e Integridade', prefix: 'Relacionamentos de Dados' },
-  { tag: 'Verificação SY-SUBRC', prefix: 'Tratamento de Resultados' },
-];
-
-for (let i = 24; i <= 105; i++) {
-  const cat = CONCEITOS_N2[(i - 24) % CONCEITOS_N2.length];
-  const isCode = i % 4 === 0;
-
-  if (isCode) {
-    ABAP_QUESTIONS_LEVEL_2.push({
-      id: `n2_${String(i).padStart(3, '0')}`,
-      level: 'Nível 2',
-      type: 'code_exercise',
-      title: `Desafio Prático #${i}: ${cat.prefix} no Dicionário & SQL`,
-      question: `Escreva um comando SQL ou declaração de estrutura para ${cat.tag.toLowerCase()} verificando o resultado com sy-subrc.`,
-      codeSnippet: `* Escreva a consulta SQL com verificação:`,
-      expectedCodePatterns: {
-        requiredTokens: ['SELECT', 'FROM', 'IF SY-SUBRC', 'ENDIF'],
-        sampleSolution: `SELECT matnr, mtart
-  FROM mara
-  INTO TABLE @DATA(lt_itens)
-  WHERE mtart = 'KA'.
-
-IF sy-subrc = 0.
-  WRITE: / 'Registros lidos com sucesso:', sy-dbcnt.
+  {
+    id: 'n2_024',
+    level: 'Nível 2',
+    type: 'multiple_choice',
+    title: 'Dicionário SE11: Elemento de Dados vs Domínio',
+    question: 'Na transação SE11, qual é a distinção conceitual exata entre um Domínio (Domain) e um Elemento de Dados (Data Element)?',
+    options: [
+      'O Domínio define o significado semântico (labels de tela, documentação) e o Elemento de Dados define o tipo de dado técnico e tamanho.',
+      'O Domínio define os atributos técnicos (tipo de dado primitivo, comprimento, casas decimais, valores fixos) e o Elemento de Dados define a semântica de negócio (textos de cabeçalho, documentação de campo e ajuda de pesquisa).',
+      'Domínios só funcionam no SAP HANA e Elementos de Dados funcionam no Oracle.',
+      'Não há distinção técnica, ambos são sinônimos com nomes diferentes na SE11.'
+    ],
+    correctAnswerIndex: 1,
+    explanation: 'Na arquitetura do ABAP Dictionary, o Domínio (DOMA) é a camada puramente técnica (ex: CHAR 10, com ou sem valores fixos), enquanto o Elemento de Dados (DTEL) agrega significado de negócio semântico (Short, Medium e Long labels de tela).',
+    conceptTag: 'Dicionário SE11',
+    xpReward: 30,
+  },
+  {
+    id: 'n2_025',
+    level: 'Nível 2',
+    type: 'multiple_choice',
+    title: 'Dicionário SE11: Papel do Campo MANDT',
+    question: 'Por que a grande maioria das tabelas transparentes do SAP ERP possui o campo MANDT (tipo de dado CLNT) como o primeiro campo da chave primária?',
+    options: [
+      'Para garantir o isolamento lógico de dados por mandante (Client-dependent architecture), permitindo que várias empresas ou ambientes coexistam na mesma base de dados com segregação automática.',
+      'Para armazenar a senha criptografada do usuário que criou o registro.',
+      'Para controlar a quantidade de memória RAM utilizada pela tabela.',
+      'Porque tabelas sem MANDT não podem ser lidas pelo comando SELECT.'
+    ],
+    correctAnswerIndex: 0,
+    explanation: 'O SAP é um sistema multi-tenancy nativo. O campo MANDT identifica o mandante (Client), e o Open SQL injeta automaticamente a cláusula "WHERE MANDT = SY-MANDT" nas consultas para proteger a privacidade dos dados entre mandantes.',
+    conceptTag: 'Modelagem de Tabelas',
+    xpReward: 30,
+  },
+  {
+    id: 'n2_026',
+    level: 'Nível 2',
+    type: 'multiple_choice',
+    title: 'Dicionário SE11: Chaves Estrangeiras (Foreign Keys)',
+    question: 'Para que serve a definição de uma Chave Estrangeira (Foreign Key) na transação SE11 de uma tabela transparente?',
+    options: [
+      'Apenas para fins decorativos no diagrama entidade-relacionamento.',
+      'Para validar a consistência e integridade referencial dos dados inseridos no campo contra a tabela de verificação (Check Table), gerando ajuda de pesquisa e validação em telas de diálogo.',
+      'Para criptografar a coluna contra acessos não autorizados de usuários da transação SE16N.',
+      'Para obrigar que o campo seja sempre preenchido com letras maiúsculas.'
+    ],
+    correctAnswerIndex: 1,
+    explanation: 'Chaves estrangeiras na SE11 garantem integridade referencial: os valores inseridos pelo usuário ou programa em uma tela clássica/tabela de visão devem obrigatoriamente existir na Check Table correspondente.',
+    conceptTag: 'Relacionamentos de Dados',
+    xpReward: 30,
+  },
+  {
+    id: 'n2_027',
+    level: 'Nível 2',
+    type: 'multiple_choice',
+    title: 'Dicionário SE11: Tipos de Visões (Views)',
+    question: 'Qual tipo de visão na SE11 é utilizado para criar telas de manutenção de tabelas (via transação SM30) com gerador de atualização de tabela?',
+    options: [
+      'Database View',
+      'Maintenance View (Visão de Atualização)',
+      'Projection View',
+      'Help View'
+    ],
+    correctAnswerIndex: 1,
+    explanation: 'A Maintenance View (Visão de Atualização) é projetada especificamente para alimentar o Gerador de Atualização de Tabela (Table Maintenance Generator), permitindo cadastros via transação SM30.',
+    conceptTag: 'Dicionário SE11',
+    xpReward: 30,
+  },
+  {
+    id: 'n2_028',
+    level: 'Nível 2',
+    type: 'multiple_choice',
+    title: 'Dicionário SE11: Objetos de Bloqueio (Lock Objects)',
+    question: 'Ao ativar um Objeto de Bloqueio na SE11 com o nome EZ_PEDIDO, quais módulos de função são gerados automaticamente pelo SAP?',
+    options: [
+      'LOCK_EZ_PEDIDO e UNLOCK_EZ_PEDIDO',
+      'ENQUEUE_EZ_PEDIDO (para bloquear o objeto) e DEQUEUE_EZ_PEDIDO (para liberar o bloqueio)',
+      'SET_LOCK_EZ_PEDIDO e CLEAR_LOCK_EZ_PEDIDO',
+      'START_LOCK e END_LOCK'
+    ],
+    correctAnswerIndex: 1,
+    explanation: 'Objetos de bloqueio (prefixo EY ou EZ) geram dois módulos de função automáticos no dicionário: ENQUEUE_<nome> para requisitar o bloqueio lógico no servidor de enqueue e DEQUEUE_<nome> para liberá-lo.',
+    conceptTag: 'Dicionário SE11',
+    xpReward: 30,
+  },
+  {
+    id: 'n2_029',
+    level: 'Nível 2',
+    type: 'multiple_choice',
+    title: 'Dicionário SE11: Buffering de Tabelas Transparentes',
+    question: 'Em quais circunstâncias é altamente recomendado ativar o Buffering de uma tabela no Dicionário de Dados?',
+    options: [
+      'Em tabelas transacionais com milhões de registros que sofrem INSERTs e UPDATEs a cada segundo.',
+      'Em tabelas de configuração ou customização (Customizing) com poucas linhas e dados lidos frequentemente mas raramente modificados.',
+      'Em qualquer tabela sem chave primária.',
+      'O Buffering foi descontinuado e não deve mais ser ativado.'
+    ],
+    correctAnswerIndex: 1,
+    explanation: 'O Buffering armazena os dados na memória compartilhada do servidor de aplicação (Shared Memory). Ele é ideal para tabelas de parametrização e customizing lidas com muita frequência e atualizadas raramente.',
+    conceptTag: 'Otimização de Banco',
+    xpReward: 30,
+  },
+  {
+    id: 'n2_030',
+    level: 'Nível 2',
+    type: 'multiple_choice',
+    title: 'Open SQL: Armadilha Crítica com FOR ALL ENTRIES',
+    question: 'Qual verificação deve ser obrigatoriamente realizada antes de executar um comando SELECT ... FOR ALL ENTRIES IN @lt_tabela?',
+    options: [
+      'Verificar se a tabela do banco de dados está desativada na SE11.',
+      'Verificar se a tabela interna lt_tabela NÃO está vazia (IF lt_tabela IS NOT INITIAL), pois se ela estiver vazia, o SAP ignora a cláusula e realiza um SELECT * de toda a tabela do banco (Full Table Scan).',
+      'Ordenar a tabela interna em ordem decrescente.',
+      'Executar um commit no banco de dados.'
+    ],
+    correctAnswerIndex: 1,
+    explanation: 'Se a tabela interna passada no FOR ALL ENTRIES estiver vazia (IS INITIAL), a cláusula WHERE inteira relacionada é suprimida pelo banco, resultando na leitura desastrosa de todos os registros da tabela no banco de dados.',
+    conceptTag: 'Otimização de Banco',
+    xpReward: 30,
+  },
+  {
+    id: 'n2_031',
+    level: 'Nível 2',
+    type: 'multiple_choice',
+    title: 'Open SQL: SELECT SINGLE vs SELECT UP TO 1 ROWS',
+    question: 'Qual é a diferença fundamental entre "SELECT SINGLE" e "SELECT ... UP TO 1 ROWS"?',
+    options: [
+      'Não há nenhuma diferença.',
+      'SELECT SINGLE exige conceitualmente que toda a chave primária da tabela seja informada na cláusula WHERE para garantir a unicidade de uma linha específica; se a chave não for completa, a ordem de retorno é indefinida. Já SELECT ... UP TO 1 ROWS permite ORDER BY e retorna o primeiro registro de um conjunto ordenado.',
+      'SELECT SINGLE só funciona para tabelas de materiais (MARA).',
+      'SELECT UP TO 1 ROWS grava os dados diretamente em arquivo no servidor.'
+    ],
+    correctAnswerIndex: 1,
+    explanation: 'SELECT SINGLE foi desenhado para buscar um registro unívoco pela chave completa. Para buscar o registro mais recente ou de maior valor (ex: maior data), a combinação recomendada é SELECT ... UP TO 1 ROWS com ORDER BY.',
+    conceptTag: 'Cláusulas e Filtros',
+    xpReward: 30,
+  },
+  {
+    id: 'n2_032',
+    level: 'Nível 2',
+    type: 'multiple_choice',
+    title: 'Open SQL: Funções de Agregação e GROUP BY',
+    question: 'Ao utilizar funções agregadas como SUM( valor ) ou COUNT( * ) em uma consulta Open SQL, qual regra sintática deve ser obedecida?',
+    options: [
+      'Todos os campos selecionados que não forem funções de agregação devem constar na cláusula GROUP BY.',
+      'A consulta não pode ter cláusula WHERE.',
+      'Apenas tabelas do módulo FI podem usar COUNT.',
+      'O comando SELECT deve ser escrito dentro de uma transação de diálogo.'
+    ],
+    correctAnswerIndex: 0,
+    explanation: 'Assim como no SQL padrão ANSI, qualquer coluna individual presente na lista de campos do SELECT que não seja uma função de agregação deve obrigatoriamente ser incluída na cláusula GROUP BY.',
+    conceptTag: 'Cláusulas e Filtros',
+    xpReward: 30,
+  },
+  {
+    id: 'n2_033',
+    level: 'Nível 2',
+    type: 'multiple_choice',
+    title: 'Open SQL: INNER JOIN vs LEFT OUTER JOIN',
+    question: 'Em uma consulta Open SQL juntando a tabela de cabeçalho de vendas (VBAK) e a tabela de itens (VBAP), o que ocorre ao utilizar LEFT OUTER JOIN?',
+    options: [
+      'Retorna apenas os cabeçalhos que possuem itens correspondentes cadastrados.',
+      'Retorna todas as ordens de venda da VBAK mesmo que não existam itens na VBAP correspondentes, preenchendo os campos da VBAP com seus valores iniciais (nulos/em branco).',
+      'Exclui os registros da tabela VBAK permanentemente do banco de dados.',
+      'Inverte a ordem das colunas no relatório.'
+    ],
+    correctAnswerIndex: 1,
+    explanation: 'O LEFT OUTER JOIN preserva todas as linhas da tabela à esquerda (VBAK), preenchendo com valores nulos/iniciais as colunas da tabela à direita (VBAP) caso não haja correspondência pela condição ON.',
+    conceptTag: 'Cláusulas e Filtros',
+    xpReward: 30,
+  },
+  {
+    id: 'n2_034',
+    level: 'Nível 2',
+    type: 'multiple_choice',
+    title: 'Variável de Sistema: SY-DBCNT no Open SQL',
+    question: 'Após a execução de um comando "SELECT ... INTO TABLE @DATA(lt_dados) ...", o que armazena a variável de sistema SY-DBCNT?',
+    options: [
+      'O código de erro da transação.',
+      'O número de registros efetivamente recuperados ou modificados pela última operação de banco de dados SQL.',
+      'O tempo em milissegundos que a consulta levou no banco.',
+      'O tamanho em kilobytes ocupado pela tabela na memória.'
+    ],
+    correctAnswerIndex: 1,
+    explanation: 'SY-DBCNT armazena o contador de linhas de banco afetadas pela operação Open SQL (linhas lidas no SELECT ou alteradas em INSERT, UPDATE e DELETE).',
+    conceptTag: 'Tratamento de Resultados',
+    xpReward: 30,
+  },
+  {
+    id: 'n2_035',
+    level: 'Nível 2',
+    type: 'multiple_choice',
+    title: 'Telas de Seleção: Estrutura Interna de um SELECT-OPTIONS',
+    question: 'Ao declarar "SELECT-OPTIONS s_matnr FOR mara-matnr.", o ABAP cria internamente uma tabela de range com quatro colunas. Quais são elas?',
+    options: [
+      'ID, NOME, DATA, HORA',
+      'SIGN, OPTION, LOW, HIGH',
+      'INCLUDE, EXCLUDE, MIN, MAX',
+      'FIELD, VALUE, TYPE, LENGTH'
+    ],
+    correctAnswerIndex: 1,
+    explanation: 'As tabelas de range criadas por SELECT-OPTIONS possuem a estrutura canônica: SIGN (\'I\' ou \'E\'), OPTION (\'EQ\', \'BT\', \'CP\', \'NE\', etc.), LOW (limite inferior) e HIGH (limite superior).',
+    conceptTag: 'Ranges e SELECT-OPTIONS',
+    xpReward: 30,
+  },
+  {
+    id: 'n2_036',
+    level: 'Nível 2',
+    type: 'multiple_choice',
+    title: 'Ranges e SELECT-OPTIONS: Campo SIGN',
+    question: 'Em uma tabela de seleção de range (SELECT-OPTIONS), quais são os valores válidos para a coluna SIGN e o que significam?',
+    options: [
+      '\'+\' para positivo e \'-\' para negativo.',
+      '\'I\' para I (Include - incluir registros no resultado) e \'E\' para Exclude (excluir registros do resultado).',
+      '\'T\' para True e \'F\' para False.',
+      '\'A\' para Ativo e \'I\' para Inativo.'
+    ],
+    correctAnswerIndex: 1,
+    explanation: 'SIGN aceita apenas os caracteres \'I\' (Include) para agregar os registros correspondentes e \'E\' (Exclude) para filtrar e remover registros correspondentes do resultado da busca.',
+    conceptTag: 'Ranges e SELECT-OPTIONS',
+    xpReward: 30,
+  },
+  {
+    id: 'n2_037',
+    level: 'Nível 2',
+    type: 'multiple_choice',
+    title: 'Dicionário SE11: Tabelas Padrão SAP - Módulo MM',
+    question: 'Qual tabela padrão do SAP armazena os dados gerais de materiais a nível de mandante (como tipo de material e unidade de medida básica)?',
+    options: [
+      'VBAK',
+      'MARA',
+      'KNA1',
+      'BKPF'
+    ],
+    correctAnswerIndex: 1,
+    explanation: 'MARA é a tabela mestre de materiais (General Material Data). Dados específicos de centro ficam na MARC e dados de depósito na MARD.',
+    conceptTag: 'Arquitetura de Dados',
+    xpReward: 30,
+  },
+  {
+    id: 'n2_038',
+    level: 'Nível 2',
+    type: 'multiple_choice',
+    title: 'Dicionário SE11: Tabelas Padrão SAP - Módulo SD',
+    question: 'Qual é o par de tabelas mestre padrão que armazena respectivamente o cabeçalho e os itens de uma Ordem de Vendas no SAP?',
+    options: [
+      'KNA1 e LFA1',
+      'VBAK (Cabeçalho) e VBAP (Itens)',
+      'EKKO e EKPO',
+      'BSIS e BSAS'
+    ],
+    correctAnswerIndex: 1,
+    explanation: 'No módulo de Vendas e Distribuição (SD), VBAK armazena os dados de cabeçalho da ordem de vendas e VBAP armazena as posições/itens da ordem.',
+    conceptTag: 'Arquitetura de Dados',
+    xpReward: 30,
+  },
+  {
+    id: 'n2_039',
+    level: 'Nível 2',
+    type: 'multiple_choice',
+    title: 'Dicionário SE11: Tabelas Padrão SAP - Módulo FI',
+    question: 'Quais tabelas clássicas representam o cabeçalho e os itens de um documento contábil no módulo Financeiro (FI)?',
+    options: [
+      'MARA e MARC',
+      'BKPF (Cabeçalho de Documento Contábil) e BSEG (Segmento/Item Contábil)',
+      'VBAK e VBAP',
+      'T001 e T001W'
+    ],
+    correctAnswerIndex: 1,
+    explanation: 'BKPF contém o cabeçalho contábil (empresa, número de documento, ano de exercício) e BSEG contém as linhas de lançamento financeiro (débito/crédito, contas do Razão).',
+    conceptTag: 'Arquitetura de Dados',
+    xpReward: 30,
+  },
+  {
+    id: 'n2_040',
+    level: 'Nível 2',
+    type: 'multiple_choice',
+    title: 'Dicionário SE11: Ajuda de Pesquisa (Search Help)',
+    question: 'Qual é a diferença entre uma Ajuda de Pesquisa Elementar (Elementary Search Help) e uma Ajuda de Pesquisa Coletiva (Collective Search Help)?',
+    options: [
+      'A elementar é gratuita e a coletiva exige licença especial.',
+      'A elementar define um único caminho de seleção através de uma tabela ou visão, enquanto a coletiva agrupa várias ajudas elementares em abas para oferecer múltiplos caminhos de busca ao usuário no F4.',
+      'A elementar só pesquisa números e a coletiva só pesquisa texto.',
+      'A coletiva é reservada apenas para o suporte da SAP.'
+    ],
+    correctAnswerIndex: 1,
+    explanation: 'Uma Collective Search Help reúne diversas Elementary Search Helps sob uma mesma interface com guias/abas no diálogo de ajuda F4, facilitando encontrar um registro por nome, código, CPF/CNPJ, etc.',
+    conceptTag: 'Dicionário SE11',
+    xpReward: 30,
+  },
+  {
+    id: 'n2_041',
+    level: 'Nível 2',
+    type: 'code_exercise',
+    title: 'Desafio Prático: SELECT SINGLE com Chave Primária',
+    question: 'Escreva um comando SELECT SINGLE para buscar o campo NAME1 da tabela KNA1 para a variável lv_nome do cliente com KUNNR = \'0000001000\'.',
+    codeSnippet: `* Escreva a consulta SELECT SINGLE:`,
+    expectedCodePatterns: {
+      requiredTokens: ['SELECT SINGLE NAME1', 'FROM KNA1', 'INTO LV_NOME', "WHERE KUNNR = '0000001000'"],
+      sampleSolution: `SELECT SINGLE name1 FROM kna1 INTO lv_nome WHERE kunnr = '0000001000'.`,
+    },
+    explanation: 'Consulta direta unívoca pela chave de cliente utilizando SELECT SINGLE.',
+    conceptTag: 'Desafio de Código',
+    xpReward: 45,
+  },
+  {
+    id: 'n2_042',
+    level: 'Nível 2',
+    type: 'code_exercise',
+    title: 'Desafio Prático: Verificação de Retorno com SY-SUBRC',
+    question: 'Escreva um bloco condicional que verifique se a variável sy-subrc é igual a zero após uma consulta. Se for, imprima \'Registro encontrado!\' usando WRITE:. Feche com ENDIF.',
+    codeSnippet: `* Verifique se sy-subrc = 0:`,
+    expectedCodePatterns: {
+      requiredTokens: ['IF SY-SUBRC = 0', 'WRITE:', "'REGISTRO ENCONTRADO!'", 'ENDIF'],
+      sampleSolution: `IF sy-subrc = 0.
+  WRITE: / 'Registro encontrado!'.
 ENDIF.`,
-      },
-      explanation: `Prática fundamental conectando comandos de banco de dados em ${cat.tag} com validação rigorosa de retorno.`,
-      conceptTag: cat.tag,
-      xpReward: 45,
-    });
-  } else {
-    const qNum = i;
-    ABAP_QUESTIONS_LEVEL_2.push({
-      id: `n2_${String(qNum).padStart(3, '0')}`,
-      level: 'Nível 2',
-      type: 'multiple_choice',
-      title: `Questão #${qNum}: ${cat.prefix} (${cat.tag})`,
-      question: `No trabalho diário de um desenvolvedor ABAP lidando com ${cat.tag}, qual é a diretriz técnica fundamental recomendada pelo SAP Standard?`,
-      options: [
-        `Garantir que as consultas em ${cat.tag} utilizem chaves primárias ou índices secundários ativos, verificando SY-SUBRC e evitando leituras sequenciais desnecessárias.`,
-        `Executar sempre SELECT * sem cláusula WHERE para carregar todo o banco na memória.`,
-        `Utilizar tabelas internas apenas com tipo String sem tipagem definida.`,
-        `Desativar a validação de mandante nas tabelas transparentes.`
-      ],
-      correctAnswerIndex: 0,
-      explanation: `No ecossistema SAP S/4HANA e NetWeaver, o correto manuseio de ${cat.tag} é crítico para a estabilidade, performance de I/O de banco e integridade referencial do ERP.`,
-      conceptTag: cat.tag,
-      xpReward: 30,
-    });
-  }
-}
+    },
+    explanation: 'Padrão essencial de validação de sucesso para comandos Open SQL.',
+    conceptTag: 'Desafio de Código',
+    xpReward: 40,
+  },
+  {
+    id: 'n2_043',
+    level: 'Nível 2',
+    type: 'code_exercise',
+    title: 'Desafio Prático: Cláusula UP TO N ROWS',
+    question: 'Escreva uma consulta que leia no máximo 5 registros (UP TO 5 ROWS) da tabela MARA gravando na tabela interna lt_materiais.',
+    codeSnippet: `* Escreva o SELECT com limitação de 5 linhas:`,
+    expectedCodePatterns: {
+      requiredTokens: ['SELECT', 'UP TO 5 ROWS', 'FROM MARA', 'INTO TABLE LT_MATERIAIS'],
+      sampleSolution: `SELECT * UP TO 5 ROWS FROM mara INTO TABLE lt_materiais.`,
+    },
+    explanation: 'Limitação do conjunto retornado do banco com a cláusula UP TO n ROWS.',
+    conceptTag: 'Desafio de Código',
+    xpReward: 45,
+  },
+  {
+    id: 'n2_044',
+    level: 'Nível 2',
+    type: 'code_exercise',
+    title: 'Desafio Prático: SELECT-OPTIONS na Tela de Seleção',
+    question: 'Declare uma seleção de tela com SELECT-OPTIONS chamada s_data para o campo erdat da tabela vbak.',
+    codeSnippet: `* Declare o SELECT-OPTIONS s_data:`,
+    expectedCodePatterns: {
+      requiredTokens: ['SELECT-OPTIONS', 'S_DATA', 'FOR VBAK-ERDAT'],
+      sampleSolution: `SELECT-OPTIONS: s_data FOR vbak-erdat.`,
+    },
+    explanation: 'Declaração padrão de tela para seleção com ranges em relatórios executáveis.',
+    conceptTag: 'Desafio de Código',
+    xpReward: 45,
+  },
+  {
+    id: 'n2_045',
+    level: 'Nível 2',
+    type: 'code_exercise',
+    title: 'Desafio Prático: SELECT com FOR ALL ENTRIES Seguro',
+    question: 'Escreva um bloco IF que valide se lt_pedidos não está vazia (IS NOT INITIAL) antes de executar o SELECT em VBAP com FOR ALL ENTRIES.',
+    codeSnippet: `* Valide lt_pedidos antes do FOR ALL ENTRIES:`,
+    expectedCodePatterns: {
+      requiredTokens: ['IF LT_PEDIDOS IS NOT INITIAL', 'SELECT', 'FOR ALL ENTRIES IN LT_PEDIDOS', 'ENDIF'],
+      sampleSolution: `IF lt_pedidos IS NOT INITIAL.
+  SELECT vbeln, posnr, matnr
+    FROM vbap
+    INTO TABLE @DATA(lt_itens)
+    FOR ALL ENTRIES IN @lt_pedidos
+    WHERE vbeln = @lt_pedidos-vbeln.
+ENDIF.`,
+    },
+    explanation: 'Regra de ouro de performance e segurança em ABAP: nunca executar FOR ALL ENTRIES com tabela interna inicializada vazia.',
+    conceptTag: 'Desafio de Código',
+    xpReward: 50,
+  },
+];
