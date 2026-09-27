@@ -92,7 +92,7 @@ export const ABAP_QUESTIONS_LEVEL_7: QuizQuestion[] = [
     id: 'n7_006',
     level: 'Nível 7',
     type: 'theory',
-    title: 'Eventos em ABAP OO: Registro de Handlers',
+    title: 'Eventos em ABAP OO: Mecanismo de Escuta',
     question: 'Qual instrução ABAP é utilizada para registrar um método receptor (handler) para escutar eventos disparados por outra instância?',
     options: [
       'LISTEN EVENT event_name FROM source_instance.',
@@ -160,7 +160,7 @@ export const ABAP_QUESTIONS_LEVEL_7: QuizQuestion[] = [
     id: 'n7_010',
     level: 'Nível 7',
     type: 'multiple_choice',
-    title: 'Construtor de Instância em ABAP: Construtor Especial',
+    title: 'Inicialização e Métodos Especiais em Classes',
     question: 'Qual é o nome obrigatório reservado para o método construtor de uma instância em classes ABAP?',
     options: [
       'INIT',

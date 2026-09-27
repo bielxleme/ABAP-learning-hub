@@ -158,7 +158,7 @@ ENDLOOP.`,
     id: 'n3_010',
     level: 'Nível 3',
     type: 'multiple_choice',
-    title: 'Eliminando Duplicatas: DELETE ADJACENT DUPLICATES',
+    title: 'Eliminando Linhas Duplicadas em Tabelas Internas',
     question: 'Por que antes de executar DELETE ADJACENT DUPLICATES FROM itab COMPARING f1 f2 é indispensável rodar um SORT itab BY f1 f2?',
     options: [
       'Porque a instrução só compara linhas adjacentes (vizinhas consecutivas). Se as linhas duplicadas não estiverem juntas, elas não serão eliminadas.',

@@ -346,9 +346,9 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <Award className="w-4 h-4 text-amber-400" />
             <span>Progresso & Badges</span>
-            {userProfile.badges.length > 0 && (
+            {(userProfile?.badges || []).length > 0 && (
               <span className="bg-amber-500/20 text-amber-300 text-[11px] px-1.5 py-0.2 rounded-full border border-amber-500/30">
-                {userProfile.badges.length}
+                {(userProfile?.badges || []).length}
               </span>
             )}
           </button>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { 
   CheckCircle2, 
@@ -54,10 +54,17 @@ interface QuizSectionProps {
   soundEnabled: boolean;
   initialSubTab?: 'general' | 'lab' | 'diagnostic';
   userProfile?: UserProfile;
+  targetQuestionId?: string | null;
+  targetLevel?: QuizDifficulty | 'Todos' | null;
+  onClearTarget?: () => void;
 }
 
+const STORAGE_LAST_QUIZ_QUESTION_KEY = 'sap_abap_last_quiz_question_id';
+const STORAGE_LAST_QUIZ_LEVEL_KEY = 'sap_abap_last_quiz_level';
+const STORAGE_LAST_QUIZ_SUBTAB_KEY = 'sap_abap_last_quiz_subtab';
+
 export const QuizSection: React.FC<QuizSectionProps> = ({
-  completedQuestionIds,
+  completedQuestionIds = [],
   onAnswerQuestion,
   onSimuladoCompleted,
   errorLogs = [],
@@ -66,11 +73,42 @@ export const QuizSection: React.FC<QuizSectionProps> = ({
   soundEnabled,
   initialSubTab = 'general',
   userProfile,
+  targetQuestionId,
+  targetLevel,
+  onClearTarget,
 }) => {
-  const [subTab, setSubTab] = useState<'general' | 'lab' | 'diagnostic'>(initialSubTab);
-  const [selectedLevel, setSelectedLevel] = useState<QuizDifficulty | 'Todos'>('Todos');
+  const [subTab, setSubTab] = useState<'general' | 'lab' | 'diagnostic'>(() => {
+    if (initialSubTab && initialSubTab !== 'general') return initialSubTab;
+    const saved = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_LAST_QUIZ_SUBTAB_KEY) : null;
+    return (saved as any) || initialSubTab || 'general';
+  });
+  const [selectedLevel, setSelectedLevel] = useState<QuizDifficulty | 'Todos'>(() => {
+    if (targetLevel) return targetLevel;
+    const saved = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_LAST_QUIZ_LEVEL_KEY) : null;
+    return (saved as any) || 'Todos';
+  });
   const [selectedType, setSelectedType] = useState<QuestionType | 'all'>('all');
-  const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
+
+  // Filtered list of questions
+  const filteredQuestions = QUIZ_QUESTIONS.filter((q) => {
+    if (selectedLevel !== 'Todos' && q.level !== selectedLevel) return false;
+    if (selectedType !== 'all' && q.type !== selectedType) return false;
+    return true;
+  });
+
+  const [activeQuestionIndex, setActiveQuestionIndex] = useState<number>(() => {
+    if (targetQuestionId) {
+      const idx = filteredQuestions.findIndex((q) => q.id === targetQuestionId);
+      if (idx !== -1) return idx;
+    }
+    const savedQId = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_LAST_QUIZ_QUESTION_KEY) : null;
+    if (savedQId) {
+      const idx = filteredQuestions.findIndex((q) => q.id === savedQId);
+      if (idx !== -1) return idx;
+    }
+    const firstUnanswered = filteredQuestions.findIndex((q) => !(completedQuestionIds || []).includes(q.id));
+    return firstUnanswered !== -1 ? firstUnanswered : 0;
+  });
 
   // Question Timing for Behavioral Analysis
   const [questionStartTime, setQuestionStartTime] = useState<number>(Date.now());
@@ -86,8 +124,12 @@ export const QuizSection: React.FC<QuizSectionProps> = ({
 
   // States for active question interaction
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
-  const [userCodeInput, setUserCodeInput] = useState('');
+  const [userCodeInput, setUserCodeInput] = useState<string>(() => {
+    const q = filteredQuestions[activeQuestionIndex];
+    return q?.codeSnippet || '';
+  });
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState('');
   const [showHint, setShowHint] = useState(false);
@@ -97,14 +139,69 @@ export const QuizSection: React.FC<QuizSectionProps> = ({
   const [versionNotices, setVersionNotices] = useState<VersionNoticeInfo[]>([]);
   const [detectedFeatures, setDetectedFeatures] = useState<string[]>([]);
 
-  // Filtered list of questions
-  const filteredQuestions = QUIZ_QUESTIONS.filter((q) => {
-    if (selectedLevel !== 'Todos' && q.level !== selectedLevel) return false;
-    if (selectedType !== 'all' && q.type !== selectedType) return false;
-    return true;
-  });
-
   const currentQuestion: QuizQuestion | undefined = filteredQuestions[activeQuestionIndex];
+
+  // Save navigation state for seamless resumption
+  useEffect(() => {
+    if (currentQuestion) {
+      try {
+        localStorage.setItem(STORAGE_LAST_QUIZ_QUESTION_KEY, currentQuestion.id);
+      } catch {}
+    }
+  }, [currentQuestion]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_LAST_QUIZ_LEVEL_KEY, selectedLevel);
+    } catch {}
+  }, [selectedLevel]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_LAST_QUIZ_SUBTAB_KEY, subTab);
+    } catch {}
+  }, [subTab]);
+
+  // Handle external navigation target (e.g. from error diagnostic or progress profile retry)
+  useEffect(() => {
+    if (targetQuestionId) {
+      if (targetLevel && targetLevel !== selectedLevel) {
+        setSelectedLevel(targetLevel);
+      }
+      setSubTab('general');
+      const targetQuestions = QUIZ_QUESTIONS.filter((q) => {
+        if (targetLevel && targetLevel !== 'Todos' && q.level !== targetLevel) return false;
+        return true;
+      });
+      const idx = targetQuestions.findIndex((q) => q.id === targetQuestionId);
+      if (idx !== -1) {
+        setActiveQuestionIndex(idx);
+        setSelectedOption(null);
+        setUserCodeInput(targetQuestions[idx]?.codeSnippet || '');
+        setSubmitted(false);
+        setIsSubmitting(false);
+        setIsCorrect(false);
+        setFeedbackMessage('');
+        setShowHint(false);
+        setObsoleteCommands([]);
+        setVersionNotices([]);
+        setDetectedFeatures([]);
+        setQuestionStartTime(Date.now());
+      }
+      onClearTarget?.();
+    }
+  }, [targetQuestionId, targetLevel, onClearTarget, selectedLevel]);
+
+  // Clamp active index when filter changes
+  useEffect(() => {
+    if (activeQuestionIndex >= filteredQuestions.length && filteredQuestions.length > 0) {
+      setActiveQuestionIndex(0);
+      setUserCodeInput(filteredQuestions[0]?.codeSnippet || '');
+      setSelectedOption(null);
+      setSubmitted(false);
+      setIsSubmitting(false);
+    }
+  }, [filteredQuestions.length, activeQuestionIndex]);
 
   // Reset answer states when question changes
   const handleSelectQuestion = (index: number) => {
@@ -112,6 +209,7 @@ export const QuizSection: React.FC<QuizSectionProps> = ({
     setSelectedOption(null);
     setUserCodeInput(filteredQuestions[index]?.codeSnippet || '');
     setSubmitted(false);
+    setIsSubmitting(false);
     setIsCorrect(false);
     setFeedbackMessage('');
     setShowHint(false);
@@ -123,12 +221,13 @@ export const QuizSection: React.FC<QuizSectionProps> = ({
   };
 
   const handleOptionSelect = (idx: number) => {
-    if (submitted) return;
+    if (submitted || isSubmitting) return;
     setSelectedOption(idx);
   };
 
   const handleSubmitAnswer = () => {
-    if (!currentQuestion || submitted) return;
+    if (!currentQuestion || submitted || isSubmitting) return;
+    setIsSubmitting(true);
 
     const timeSpent = Math.max(2, Math.round((Date.now() - questionStartTime) / 1000));
     let correct = false;
@@ -246,6 +345,7 @@ export const QuizSection: React.FC<QuizSectionProps> = ({
   const handleRetry = () => {
     setSelectedOption(null);
     setSubmitted(false);
+    setIsSubmitting(false);
     setIsCorrect(false);
     setFeedbackMessage('');
     setObsoleteCommands([]);

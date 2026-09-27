@@ -309,6 +309,7 @@ export const SapLogonModal: React.FC<SapLogonModalProps> = ({
     saveUsersDirectory(updatedList);
     setPendingLoginProfile(null);
     onLogin(updatedProfile);
+    if (onClose) onClose();
   };
 
   // Handle creating a new user with duplicate check
@@ -351,6 +352,13 @@ export const SapLogonModal: React.FC<SapLogonModalProps> = ({
 
     const assignedRace: RpgRace = newRpgRace || getRandomRpgRace();
 
+    // Migrate guest progress if previously logged in as guest
+    const guestXp = currentProfile?.isGuest && currentProfile.xp > 0 ? currentProfile.xp : 0;
+    const guestLevel = currentProfile?.isGuest && currentProfile.level > 1 ? currentProfile.level : 1;
+    const guestRankTitle = currentProfile?.isGuest && currentProfile.rankTitle !== 'Visitante NetWeaver (Convidado)' ? currentProfile.rankTitle : 'Estagiária ABAP (SE38)';
+    const guestCompletedQuestions = currentProfile?.isGuest && currentProfile.completedQuestionIds ? currentProfile.completedQuestionIds : [];
+    const guestBadges = currentProfile?.isGuest && currentProfile.badges ? currentProfile.badges : [];
+
     const newUser: UserProfile = {
       name: cleanName,
       avatar: newAvatar,
@@ -358,26 +366,42 @@ export const SapLogonModal: React.FC<SapLogonModalProps> = ({
       email: newEmail.trim() || undefined,
       googleLinked: isGoogleLinked,
       password: newPassword.trim() || undefined,
-      xp: 0,
-      level: 1,
-      rankTitle: 'Estagiária ABAP (SE38)',
-      streakDays: 1,
+      xp: guestXp,
+      level: guestLevel,
+      rankTitle: guestRankTitle,
+      streakDays: currentProfile?.streakDays || 1,
       lastActiveDate: new Date().toISOString(),
-      completedQuestionIds: [],
-      badges: initialBadges,
+      completedQuestionIds: guestCompletedQuestions,
+      badges: Array.from(new Set([...initialBadges, ...guestBadges])),
       soundEnabled: true,
+      isGuest: false,
     };
+
+    // If guest had local storage entries, migrate them
+    if (currentProfile?.isGuest) {
+      try {
+        const guestHistory = localStorage.getItem(`sap_abap_user_${currentProfile.name}_history`);
+        if (guestHistory && !localStorage.getItem(`sap_abap_user_${cleanName}_history`)) {
+          localStorage.setItem(`sap_abap_user_${cleanName}_history`, guestHistory);
+        }
+        const guestCode = localStorage.getItem(`sap_abap_user_${currentProfile.name}_code`);
+        if (guestCode && !localStorage.getItem(`sap_abap_user_${cleanName}_code`)) {
+          localStorage.setItem(`sap_abap_user_${cleanName}_code`, guestCode);
+        }
+      } catch (err) {
+        console.error('Error copying guest data', err);
+      }
+    }
 
     const updatedList = [newUser, ...savedProfiles];
     saveUsersDirectory(updatedList);
     setSuccessMessage(`Usuário "${cleanName}" criado com sucesso no Mandante 100!`);
 
-    // Switch to select tab and preselect new user
+    // Directly login with the newly created account and close modal
     setTimeout(() => {
-      setSelectedUsername(cleanName);
-      setActiveTab('select');
-      setPendingLoginProfile(newUser);
-    }, 600);
+      onLogin(newUser);
+      if (onClose) onClose();
+    }, 400);
   };
 
   const executeDeleteUser = (usernameToDelete: string) => {
@@ -441,22 +465,22 @@ export const SapLogonModal: React.FC<SapLogonModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
-      <div className="bg-[#f0f4f8] text-slate-900 w-full max-w-xl rounded-lg shadow-2xl border-2 border-[#1b2a4a] overflow-hidden flex flex-col font-sans">
+    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto animate-in fade-in duration-200">
+      <div className="bg-[#f0f4f8] text-slate-900 w-full max-w-xl my-auto rounded-lg shadow-2xl border-2 border-[#1b2a4a] overflow-hidden flex flex-col font-sans max-h-[92dvh]">
         {/* Top SAP GUI Header */}
-        <div className="bg-[#1b2a4a] text-white px-4 py-2.5 flex items-center justify-between select-none border-b border-[#304875]">
+        <div className="bg-[#1b2a4a] text-white px-3 sm:px-4 py-2.5 flex items-center justify-between select-none border-b border-[#304875] shrink-0">
           <div className="flex items-center space-x-2.5">
             <div className="w-6 h-6 bg-[#0070f2] rounded flex items-center justify-center font-mono text-[11px] font-bold text-white shadow-xs">
               SAP
             </div>
             <div>
               <div className="font-bold text-xs sm:text-sm tracking-wide flex items-center gap-2">
-                <span>SAP Logon 7.70 — Gerenciamento de Usuários</span>
+                <span>SAP Logon 7.70 — Usuários</span>
                 <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1.5 py-0.2 rounded text-[10px] font-mono">
                   MANDANTE 100
                 </span>
               </div>
-              <div className="text-[10px] text-blue-200">
+              <div className="text-[10px] text-blue-200 hidden sm:block">
                 Sistema: PRD (Produção) | Conexão Segura NetWeaver
               </div>
             </div>
@@ -465,43 +489,45 @@ export const SapLogonModal: React.FC<SapLogonModalProps> = ({
           {canCancel && onClose && (
             <button
               onClick={onClose}
-              className="text-slate-300 hover:text-white px-2 py-0.5 rounded hover:bg-slate-700/50 text-xs cursor-pointer"
+              className="text-slate-300 hover:text-white px-2.5 py-1 rounded hover:bg-slate-700/50 text-xs font-semibold cursor-pointer border border-slate-600/50"
             >
               Fechar
             </button>
           )}
         </div>
 
-        {/* First-Screen Suggestion & Guest Access Banner */}
-        <div className="bg-gradient-to-r from-[#102447] via-[#1b3668] to-[#0b5bb5] text-white p-3.5 px-4 border-b border-blue-600/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
-          <div className="flex items-start space-x-2.5">
-            <span className="text-xl shrink-0">💡</span>
-            <div className="space-y-0.5">
-              <div className="font-bold text-white flex items-center gap-1.5">
-                <span>Bem-vindo(a) ao SAP ABAP Learning Hub!</span>
-                <span className="bg-amber-400 text-slate-950 text-[10px] font-black px-1.5 py-0.2 rounded font-sans">
-                  Sugerido
-                </span>
+        {/* First-Screen Suggestion & Guest Access Banner (Hidden when already editing/creating to save mobile height) */}
+        {activeTab === 'select' && (
+          <div className="bg-gradient-to-r from-[#102447] via-[#1b3668] to-[#0b5bb5] text-white p-3 px-3.5 border-b border-blue-600/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-xs shrink-0">
+            <div className="flex items-start space-x-2">
+              <span className="text-lg shrink-0">💡</span>
+              <div className="space-y-0.5">
+                <div className="font-bold text-white flex items-center gap-1.5">
+                  <span>SAP ABAP Learning Hub</span>
+                  <span className="bg-amber-400 text-slate-950 text-[9px] font-black px-1.5 py-0.2 rounded font-sans">
+                    Sugerido
+                  </span>
+                </div>
+                <p className="text-blue-100 text-[11px] leading-snug">
+                  Crie seu usuário para salvar XP, insígnias e herói de RPG na nuvem.
+                </p>
               </div>
-              <p className="text-blue-100 text-[11px] leading-snug">
-                Sugerimos criar seu usuário ou entrar com perfil existente para registrar seu XP, medalhas e RPG. Mas fique à vontade para continuar como Convidado!
-              </p>
+            </div>
+
+            <div className="flex items-center space-x-2 w-full sm:w-auto justify-end shrink-0">
+              <button
+                type="button"
+                onClick={handleContinueAsGuest}
+                className="px-2.5 py-1 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded text-xs transition-colors flex items-center gap-1 shadow-sm cursor-pointer whitespace-nowrap"
+              >
+                <span>👤 Continuar como Convidado</span>
+              </button>
             </div>
           </div>
-
-          <div className="flex items-center space-x-2 w-full sm:w-auto justify-end shrink-0">
-            <button
-              type="button"
-              onClick={handleContinueAsGuest}
-              className="px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded text-xs transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
-            >
-              <span>👤 Continuar como Convidado</span>
-            </button>
-          </div>
-        </div>
+        )}
 
         {/* Tab Navigation */}
-        <div className="bg-[#e4ebf2] border-b border-slate-300 px-4 py-1.5 flex items-center space-x-2 text-xs">
+        <div className="bg-[#e4ebf2] border-b border-slate-300 px-3 py-1.5 flex items-center space-x-1.5 text-xs overflow-x-auto scrollbar-none shrink-0">
           <button
             type="button"
             onClick={() => {
@@ -509,14 +535,14 @@ export const SapLogonModal: React.FC<SapLogonModalProps> = ({
               setErrorMessage('');
               setSuccessMessage('');
             }}
-            className={`px-3 py-1.5 rounded font-semibold transition-all flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded font-semibold transition-all flex items-center gap-1.5 shrink-0 ${
               activeTab === 'select'
                 ? 'bg-[#0070f2] text-white shadow-xs'
                 : 'text-slate-700 hover:bg-slate-200'
             }`}
           >
             <LogIn className="w-3.5 h-3.5" />
-            <span>Selecionar Usuário Salvo ({savedProfiles.length})</span>
+            <span>Selecionar Usuário ({savedProfiles.length})</span>
           </button>
 
           <button
@@ -529,14 +555,14 @@ export const SapLogonModal: React.FC<SapLogonModalProps> = ({
               setNewPassword('');
               setNewConfirmPassword('');
             }}
-            className={`px-3 py-1.5 rounded font-semibold transition-all flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded font-semibold transition-all flex items-center gap-1.5 shrink-0 ${
               activeTab === 'create'
                 ? 'bg-[#0070f2] text-white shadow-xs'
                 : 'text-slate-700 hover:bg-slate-200'
             }`}
           >
             <UserPlus className="w-3.5 h-3.5" />
-            <span>Criar Novo Usuário SAP</span>
+            <span>Criar Novo Usuário</span>
           </button>
 
           <button
@@ -547,21 +573,21 @@ export const SapLogonModal: React.FC<SapLogonModalProps> = ({
               setSuccessMessage('');
               handleRefreshCloudBackups();
             }}
-            className={`px-3 py-1.5 rounded font-semibold transition-all flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded font-semibold transition-all flex items-center gap-1.5 shrink-0 ${
               activeTab === 'restore'
                 ? 'bg-indigo-600 text-white shadow-xs'
                 : 'text-indigo-700 hover:bg-indigo-100 bg-indigo-50/70 border border-indigo-200'
             }`}
           >
             <CloudDownload className="w-3.5 h-3.5" />
-            <span>Recuperar / Restaurar Backup</span>
+            <span>Recuperar / Nuvem</span>
           </button>
         </div>
 
         {/* Alert Feedback Messages */}
-        <div className="px-4 pt-3 space-y-2">
+        <div className="px-4 pt-2.5 space-y-1.5 shrink-0">
           {errorMessage && (
-            <div className="p-3 bg-red-50 border border-red-300 rounded text-red-800 text-xs flex items-start gap-2 animate-in fade-in">
+            <div className="p-2.5 bg-red-50 border border-red-300 rounded text-red-800 text-xs flex items-start gap-2 animate-in fade-in">
               <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
               <div>
                 <span className="font-bold">Aviso SAP:</span> {errorMessage}
@@ -570,7 +596,7 @@ export const SapLogonModal: React.FC<SapLogonModalProps> = ({
           )}
 
           {successMessage && (
-            <div className="p-3 bg-emerald-50 border border-emerald-300 rounded text-emerald-800 text-xs flex items-start gap-2 animate-in fade-in">
+            <div className="p-2.5 bg-emerald-50 border border-emerald-300 rounded text-emerald-800 text-xs flex items-start gap-2 animate-in fade-in">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
               <div>
                 <span className="font-bold">Sucesso:</span> {successMessage}
@@ -581,7 +607,7 @@ export const SapLogonModal: React.FC<SapLogonModalProps> = ({
 
         {/* TAB 1: Select User & Logon */}
         {activeTab === 'select' && (
-          <form onSubmit={handleInitiateLogon} className="p-4 sm:p-5 space-y-4 bg-white text-xs sm:text-sm">
+          <form onSubmit={handleInitiateLogon} className="p-3 sm:p-5 space-y-3.5 bg-white text-xs sm:text-sm overflow-y-auto flex-1">
             {/* Reinstallation Recovery Notice Banner */}
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/90 rounded-lg p-2.5 flex items-center justify-between gap-2.5">
               <div className="flex items-center gap-2">
@@ -769,7 +795,7 @@ export const SapLogonModal: React.FC<SapLogonModalProps> = ({
 
         {/* TAB 2: Create New User */}
         {activeTab === 'create' && (
-          <form onSubmit={handleCreateUser} className="p-4 sm:p-5 space-y-3.5 bg-white text-xs sm:text-sm">
+          <form onSubmit={handleCreateUser} className="p-3.5 sm:p-5 space-y-3.5 bg-white text-xs sm:text-sm overflow-y-auto flex-1">
             <div>
               <label className="block text-slate-700 font-bold text-xs mb-1">
                 Nome de Usuário SAP (ID):
@@ -961,7 +987,7 @@ export const SapLogonModal: React.FC<SapLogonModalProps> = ({
 
         {/* TAB 3: Restore / Recover Backup After Reinstallation */}
         {activeTab === 'restore' && (
-          <div className="p-4 sm:p-5 space-y-4 bg-white text-xs sm:text-sm">
+          <div className="p-3.5 sm:p-5 space-y-4 bg-white text-xs sm:text-sm overflow-y-auto flex-1">
             {/* Explanatory Info Card */}
             <div className="bg-indigo-50/80 border border-indigo-200 rounded-lg p-3 text-slate-700 space-y-1.5">
               <div className="flex items-center gap-2 text-indigo-900 font-bold text-xs sm:text-sm">

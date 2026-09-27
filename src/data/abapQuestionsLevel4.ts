@@ -5,7 +5,7 @@ export const ABAP_QUESTIONS_LEVEL_4: QuizQuestion[] = [
     id: 'n4_001',
     level: 'Nível 4',
     type: 'multiple_choice',
-    title: 'Visibilidade em ABAP OO: PUBLIC, PROTECTED e PRIVATE',
+    title: 'Seções de Visibilidade em Classes ABAP OO',
     question: 'Qual seção de uma classe ABAP permite acesso aos atributos e métodos apenas pela própria classe e pelas subclasses que herdam dela?',
     options: [
       'PROTECTED SECTION.',
@@ -22,7 +22,7 @@ export const ABAP_QUESTIONS_LEVEL_4: QuizQuestion[] = [
     id: 'n4_002',
     level: 'Nível 4',
     type: 'multiple_choice',
-    title: 'Instanciação com NEW (ABAP 7.40+)',
+    title: 'Instanciação Moderna de Objetos',
     question: 'Qual é a forma moderna de instanciar a classe lcl_faturamento atribuindo para uma variável tipada em linha?',
     options: [
       'DATA(lo_fat) = NEW lcl_faturamento( ).',
@@ -39,7 +39,7 @@ export const ABAP_QUESTIONS_LEVEL_4: QuizQuestion[] = [
     id: 'n4_003',
     level: 'Nível 4',
     type: 'multiple_choice',
-    title: 'Tratamento de Exceções com TRY / CATCH',
+    title: 'Hierarquia de Exceções Baseadas em Classes',
     question: 'Qual é a classe raiz universal da qual todas as exceções orientadas a objetos no SAP herdam?',
     options: [
       'CX_ROOT',
@@ -56,7 +56,7 @@ export const ABAP_QUESTIONS_LEVEL_4: QuizQuestion[] = [
     id: 'n4_004',
     level: 'Nível 4',
     type: 'multiple_choice',
-    title: 'Interfaces em ABAP: INTERFACE ... ENDINTERFACE',
+    title: 'Interfaces e Contratos em ABAP OO',
     question: 'Em uma classe que implementa a interface zif_imposto, como os métodos da interface são referenciados dentro da classe?',
     options: [
       'Com o prefixo do nome da interface e til: zif_imposto~calcular_icms.',
@@ -123,7 +123,7 @@ DATA(lo_pedido) = `,
     id: 'n4_008',
     level: 'Nível 4',
     type: 'multiple_choice',
-    title: 'Eventos em ABAP OO: EVENTS e SET HANDLER',
+    title: 'Manipulação e Registro de Eventos em ABAP OO',
     question: 'Como um objeto B se registra para escutar e reagir a um evento disparado pelo objeto A?',
     options: [
       'SET HANDLER lo_b->on_evento FOR lo_a.',

@@ -31,6 +31,7 @@ export interface UserAnswerHistory {
   date: string;
   feedback: string;
   timeSpentSeconds?: number;
+  timestamp?: string;
 }
 
 export interface Badge {

@@ -106,7 +106,7 @@ export const ABAP_QUESTIONS_LEVEL_5: QuizQuestion[] = [
     id: 'n5_007',
     level: 'Nível 5',
     type: 'multiple_choice',
-    title: 'Simplificações de Tabelas no S/4HANA (MATDOC e ACDOCA)',
+    title: 'Unificação Contábil no S/4HANA (Universal Journal)',
     question: 'No SAP S/4HANA Finance, centenas de tabelas clássicas agregadas (como BSIS, BSAS, GLT0) foram unificadas no "Universal Journal". Qual é essa tabela central?',
     options: [
       'ACDOCA',

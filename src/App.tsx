@@ -56,6 +56,8 @@ export default function App() {
   });
   const [logonInitialTab, setLogonInitialTab] = useState<'select' | 'create' | 'restore'>('select');
   const [profileInitialTab, setProfileInitialTab] = useState<'overview' | 'behavior' | 'rpg' | 'diagnostics' | 'history' | 'backup'>('overview');
+  const [targetQuizQuestionId, setTargetQuizQuestionId] = useState<string | null>(null);
+  const [targetQuizLevel, setTargetQuizLevel] = useState<string | null>(null);
 
   // Theme state persisted in localStorage & synchronized with CSS variables
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -383,11 +385,12 @@ export default function App() {
       }
 
       setUserProfile((prev) => {
-        const newXp = prev.xp + xpEarned;
+        const completedIds = prev.completedQuestionIds || [];
+        const isAlreadyCompleted = completedIds.includes(historyItem.questionId);
+        const actualXpEarned = isAlreadyCompleted ? 0 : xpEarned;
+        const newXp = prev.xp + actualXpEarned;
         const { title: autoTitle, level } = calculateRankTitle(newXp);
-        const completed = prev.completedQuestionIds.includes(historyItem.questionId)
-          ? prev.completedQuestionIds
-          : [...prev.completedQuestionIds, historyItem.questionId];
+        const completed = isAlreadyCompleted ? completedIds : [...completedIds, historyItem.questionId];
 
         const isCustomEquipped = prev.equippedTitle && prev.equippedTitle !== 'auto';
 
@@ -397,6 +400,7 @@ export default function App() {
           level,
           rankTitle: isCustomEquipped ? prev.rankTitle : autoTitle,
           completedQuestionIds: completed,
+          badges: prev.badges || [],
         };
       });
     } else {
@@ -545,7 +549,7 @@ export default function App() {
         userProfile={userProfile}
         toggleSound={handleToggleSound}
         onOpenLogon={() => {
-          setLogonInitialTab('select');
+          setLogonInitialTab(userProfile.isGuest ? 'create' : 'select');
           setIsLogonOpen(true);
         }}
         onOpenGlossary={() => {
@@ -621,7 +625,7 @@ export default function App() {
             </div>
 
             <QuizSection
-              completedQuestionIds={userProfile.completedQuestionIds}
+              completedQuestionIds={userProfile.completedQuestionIds || []}
               onAnswerQuestion={handleAnswerQuestion}
               onSimuladoCompleted={handleSimuladoCompleted}
               errorLogs={userProfile.errorLogs || []}
@@ -629,6 +633,12 @@ export default function App() {
               onRecordError={handleRecordError}
               soundEnabled={userProfile.soundEnabled}
               userProfile={userProfile}
+              targetQuestionId={targetQuizQuestionId}
+              targetLevel={targetQuizLevel as any}
+              onClearTarget={() => {
+                setTargetQuizQuestionId(null);
+                setTargetQuizLevel(null);
+              }}
             />
           </div>
         )}
@@ -677,6 +687,11 @@ export default function App() {
             onClearResolvedErrors={handleClearResolvedErrors}
             currentCode={currentCode}
             onRestoreBackup={handleRestoreBackup}
+            onRetryQuestion={(questionId, level) => {
+              setTargetQuizQuestionId(questionId);
+              setTargetQuizLevel(level);
+              setActiveTab('quiz');
+            }}
           />
         )}
 
@@ -758,7 +773,7 @@ export default function App() {
       <MobileBottomNav
         activeTab={activeTab}
         setActiveTab={setActiveTab as any}
-        badgeCount={userProfile.badges.length}
+        badgeCount={(userProfile.badges || []).length}
       />
     </div>
   );

@@ -67,6 +67,7 @@ interface ProgressProfileProps {
   currentCode?: string;
   onRestoreBackup?: (backup: AppUserDataBackup) => void;
   initialTab?: 'overview' | 'behavior' | 'rpg' | 'diagnostics' | 'history' | 'backup';
+  onRetryQuestion?: (questionId: string, level: string) => void;
 }
 
 export const ProgressProfile: React.FC<ProgressProfileProps> = ({
@@ -82,8 +83,10 @@ export const ProgressProfile: React.FC<ProgressProfileProps> = ({
   currentCode,
   onRestoreBackup,
   initialTab,
+  onRetryQuestion,
 }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'behavior' | 'rpg' | 'diagnostics' | 'history' | 'backup'>(initialTab || 'overview');
+  const [topicViewMode, setTopicViewMode] = useState<'by_type' | 'by_category'>('by_type');
 
   useEffect(() => {
     if (initialTab) {
@@ -190,7 +193,7 @@ export const ProgressProfile: React.FC<ProgressProfileProps> = ({
 
     // Badge based unlocked titles
     INITIAL_BADGES.forEach((b) => {
-      if (userProfile.badges.includes(b.id) && b.unlockedTitle) {
+      if ((userProfile.badges || []).includes(b.id) && b.unlockedTitle) {
         titlesSet.add(b.unlockedTitle);
       }
     });
@@ -373,7 +376,7 @@ export const ProgressProfile: React.FC<ProgressProfileProps> = ({
             <div className="h-8 w-px bg-white/15" />
             <div className="text-center">
               <div className="text-xl sm:text-2xl font-extrabold text-emerald-300 font-mono">
-                {userProfile.completedQuestionIds.length}
+                {userProfile.completedQuestionIds?.length || 0}
               </div>
               <div className="text-[11px] text-slate-300 uppercase tracking-wider font-semibold">Concluídos</div>
             </div>
@@ -408,7 +411,7 @@ export const ProgressProfile: React.FC<ProgressProfileProps> = ({
           }`}
         >
           <Award className="w-4 h-4" />
-          <span>Visão Geral & Medalhas ({userProfile.badges.length})</span>
+          <span>Visão Geral & Medalhas ({(userProfile.badges || []).length})</span>
         </button>
 
         <button
@@ -804,7 +807,7 @@ export const ProgressProfile: React.FC<ProgressProfileProps> = ({
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-bold text-slate-800 text-sm sm:text-base flex items-center gap-2">
                 <Trophy className="w-4 h-4 text-amber-500" />
-                <span>Medalhas & Conquistas Desbloqueadas ({userProfile.badges.length} / {INITIAL_BADGES.length})</span>
+                <span>Medalhas & Conquistas Desbloqueadas ({(userProfile.badges || []).length} / {INITIAL_BADGES.length})</span>
               </h3>
               <span className="text-xs text-slate-400">
                 Resolva desafios para desbloquear novos títulos
@@ -813,7 +816,7 @@ export const ProgressProfile: React.FC<ProgressProfileProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {INITIAL_BADGES.map((b) => {
-                const isUnlocked = userProfile.badges.includes(b.id);
+                const isUnlocked = (userProfile.badges || []).includes(b.id);
                 return (
                   <div
                     key={b.id}
@@ -936,19 +939,60 @@ export const ProgressProfile: React.FC<ProgressProfileProps> = ({
             )}
           </div>
 
-          {/* Topic Performance Grid */}
-          <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-5 space-y-4">
-            <h4 className="text-sm sm:text-base font-bold text-slate-800 flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-blue-600" />
-              <span>Taxa de Acertos e Tempo Médio por Categoria</span>
-            </h4>
+          {/* Topic Performance Grid with Dual Categorization */}
+          <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4 sm:p-5 space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 pb-2 border-b border-slate-100">
+              <div>
+                <h4 className="text-sm sm:text-base font-bold text-slate-800 flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-blue-600" />
+                  <span>Desempenho por Tópicos & Categorias</span>
+                </h4>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Alternar entre classificação detalhada por tipo ou agrupamento por macro categoria SAP.
+                </p>
+              </div>
 
+              {/* View Mode Toggle Buttons */}
+              <div className="flex items-center space-x-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs w-full sm:w-auto justify-between sm:justify-start">
+                <button
+                  type="button"
+                  onClick={() => setTopicViewMode('by_type')}
+                  className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-md font-semibold text-xs transition-all cursor-pointer ${
+                    topicViewMode === 'by_type'
+                      ? 'bg-white text-blue-700 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Por Tipo & Descrição
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTopicViewMode('by_category')}
+                  className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-md font-semibold text-xs transition-all cursor-pointer ${
+                    topicViewMode === 'by_category'
+                      ? 'bg-white text-blue-700 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Por Categoria (DDIC, Programas...)
+                </button>
+              </div>
+            </div>
+
+            {/* List Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {behaviorSummary.categoryStats.map((cat) => (
-                <div key={cat.categoryKey} className="p-3.5 rounded-lg border border-slate-200 bg-slate-50 space-y-2">
-                  <div className="flex items-center justify-between text-xs font-bold text-slate-800">
-                    <span className="truncate pr-2">{cat.categoryLabel}</span>
-                    <span className={`font-mono ${cat.accuracyRate >= 70 ? 'text-emerald-600' : 'text-amber-600'}`}>
+              {(topicViewMode === 'by_type' ? behaviorSummary.topicStats : behaviorSummary.categoryStats).map((cat) => (
+                <div key={cat.categoryKey} className="p-3.5 rounded-lg border border-slate-200 bg-slate-50 space-y-2 hover:border-blue-300 transition-colors">
+                  <div className="flex items-start justify-between text-xs font-bold text-slate-800 gap-2">
+                    <div>
+                      <span className="block">{cat.categoryLabel}</span>
+                      {cat.description && (
+                        <span className="text-[10px] text-slate-500 font-normal block leading-tight mt-0.5">
+                          {cat.description}
+                        </span>
+                      )}
+                    </div>
+                    <span className={`font-mono text-sm shrink-0 ${cat.accuracyRate >= 70 ? 'text-emerald-600' : 'text-amber-600'}`}>
                       {cat.accuracyRate}%
                     </span>
                   </div>
@@ -956,21 +1000,133 @@ export const ProgressProfile: React.FC<ProgressProfileProps> = ({
                   {/* Progress bar */}
                   <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
                     <div
-                      className={`h-full rounded-full ${cat.accuracyRate >= 70 ? 'bg-emerald-500' : cat.accuracyRate >= 50 ? 'bg-amber-500' : 'bg-red-500'}`}
+                      className={`h-full rounded-full transition-all duration-300 ${cat.accuracyRate >= 70 ? 'bg-emerald-500' : cat.accuracyRate >= 50 ? 'bg-amber-500' : 'bg-red-500'}`}
                       style={{ width: `${cat.accuracyRate}%` }}
                     />
                   </div>
 
-                  <div className="flex items-center justify-between text-[11px] text-slate-500">
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 pt-0.5">
                     <span>{cat.correctCount} acertos em {cat.totalAttempts} tentativas</span>
-                    <span className="flex items-center gap-1">
+                    <span className="flex items-center gap-1 font-mono">
                       <Clock className="w-3 h-3 text-slate-400" />
-                      ~{cat.averageTimeSeconds}s por exercício
+                      ~{cat.averageTimeSeconds}s
                     </span>
                   </div>
                 </div>
               ))}
             </div>
+
+            {(topicViewMode === 'by_type' ? behaviorSummary.topicStats : behaviorSummary.categoryStats).length === 0 && (
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg text-center text-xs text-slate-500">
+                Nenhum exercício registrado nesta visualização ainda. Resolva quizzes para gerar estatísticas!
+              </div>
+            )}
+          </div>
+
+          {/* SECTION: Caderno de Perguntas Respondidas Incorretamente */}
+          <div className="bg-white rounded-lg border border-rose-200 shadow-xs p-4 sm:p-5 space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 pb-2 border-b border-rose-100">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-rose-100 text-rose-700 rounded-lg shrink-0">
+                  <RotateCcw className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2">
+                    <span>Caderno de Erros — Perguntas para Refazer</span>
+                    {behaviorSummary.totalFailedQuestions > 0 && (
+                      <span className="bg-rose-100 text-rose-800 border border-rose-200 text-xs px-2 py-0.2 rounded-full font-mono font-bold">
+                        {behaviorSummary.totalFailedQuestions} questões
+                      </span>
+                    )}
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Separadas exercício por exercício e ordenadas por nível. Clique para ir direto ao quiz e refazer!
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {behaviorSummary.totalFailedQuestions > 0 ? (
+              <div className="space-y-4">
+                {Object.entries(behaviorSummary.failedQuestionsByLevel).map(([lvl, questions]) => {
+                  const exerciseNumbersList = questions.map((q) => q.exerciseNumber).join(', ');
+
+                  return (
+                    <div key={lvl} className="border border-slate-200 rounded-lg overflow-hidden bg-slate-50/60">
+                      {/* Level Group Header */}
+                      <div className="bg-[#1b2a4a] text-white px-3.5 py-2 flex flex-wrap items-center justify-between gap-2 text-xs font-bold">
+                        <div className="flex items-center gap-2">
+                          <span className="text-amber-400">Trilha {lvl}</span>
+                          <span className="text-blue-200 font-normal">
+                            (Exercícios com erro: <strong className="text-amber-300 font-mono">{exerciseNumbersList}</strong>)
+                          </span>
+                        </div>
+                        <span className="bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded font-mono">
+                          {questions.length} para refazer
+                        </span>
+                      </div>
+
+                      {/* Question items in this level */}
+                      <div className="p-3 space-y-2.5">
+                        {questions.map((q) => (
+                          <div
+                            key={q.questionId}
+                            className="p-3 bg-white border border-slate-200 hover:border-rose-300 rounded-lg shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs"
+                          >
+                            <div className="space-y-1 min-w-0 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="bg-slate-100 border border-slate-300 px-2 py-0.5 rounded font-mono font-bold text-slate-800 text-[11px]">
+                                  Exercício #{q.exerciseNumber}
+                                </span>
+                                <span className="font-bold text-slate-900">{q.questionTitle}</span>
+                                {q.conceptTag && (
+                                  <span className="bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.2 rounded text-[10px]">
+                                    {q.conceptTag}
+                                  </span>
+                                )}
+                              </div>
+
+                              {q.userAnswer && (
+                                <p className="text-[11px] text-rose-700 bg-rose-50 border border-rose-100 px-2 py-1 rounded inline-block">
+                                  Sua resposta anterior: <strong className="font-mono">{q.userAnswer}</strong>
+                                </p>
+                              )}
+
+                              {q.feedback && (
+                                <p className="text-[11px] text-slate-600 line-clamp-2">
+                                  💡 <strong>Dica SAP:</strong> {q.feedback}
+                                </p>
+                              )}
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (onRetryQuestion) {
+                                  onRetryQuestion(q.questionId, q.level);
+                                }
+                              }}
+                              className="shrink-0 w-full sm:w-auto px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
+                            >
+                              <RotateCcw className="w-3.5 h-3.5" />
+                              <span>Refazer Exercício #{q.exerciseNumber}</span>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="p-6 bg-emerald-50 border border-emerald-200 rounded-lg text-center space-y-1.5">
+                <CheckCircle2 className="w-6 h-6 text-emerald-600 mx-auto" />
+                <h5 className="font-bold text-emerald-900 text-sm">Parabéns! Nenhum exercício incorreto pendente</h5>
+                <p className="text-xs text-emerald-700">
+                  Todas as questões que você respondeu foram acertadas ou você ainda não respondeu aos quizzes.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -1240,7 +1396,7 @@ export const ProgressProfile: React.FC<ProgressProfileProps> = ({
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-slate-500 dark:text-slate-400">Conquistas salvas:</span>
-                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{userProfile.badges.length} medalhas</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{(userProfile.badges || []).length} medalhas</span>
                   </div>
                   <div className="flex justify-between items-center pt-1 border-t border-slate-200 dark:border-slate-700">
                     <span className="text-slate-500 dark:text-slate-400">Último backup salvo:</span>
