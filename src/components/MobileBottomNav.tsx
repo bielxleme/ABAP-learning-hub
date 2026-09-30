@@ -51,7 +51,8 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   return (
     <nav 
       aria-label="Navegação Móvel Principal"
-      className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#121f36]/95 backdrop-blur-md border-t border-[#253966] shadow-2xl px-2 py-1.5 flex items-center justify-around safe-area-pb"
+      translate="no"
+      className="notranslate md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#121f36]/95 backdrop-blur-md border-t border-[#253966] shadow-2xl px-2 py-1.5 flex items-center justify-around safe-area-pb"
     >
       {tabs.map((tab) => {
         const Icon = tab.icon;

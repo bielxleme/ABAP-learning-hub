@@ -530,9 +530,9 @@ export const QuizSection: React.FC<QuizSectionProps> = ({
           )}
 
           {/* MOBILE QUICK NAVIGATION BAR FOR QUESTIONS (Elimina confusão de excesso de botões na tela) */}
-          <div className="bg-white rounded-lg border border-slate-200 p-2.5 sm:p-3 shadow-xs flex items-center justify-between gap-2">
+          <div translate="no" className="notranslate bg-white rounded-lg border border-slate-200 p-2.5 sm:p-3 shadow-xs flex items-center justify-between gap-2">
             <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 rounded-full bg-blue-100 text-[#0070f2] flex items-center justify-center font-bold text-xs shrink-0">
+              <div className="w-6 h-6 rounded-full bg-blue-100 text-[#0070f2] flex items-center justify-center font-bold text-xs shrink-0 font-mono">
                 {activeQuestionIndex + 1}
               </div>
               <div className="text-xs">
@@ -574,7 +574,7 @@ export const QuizSection: React.FC<QuizSectionProps> = ({
           <div className={`grid grid-cols-1 ${isFocusMode ? 'lg:grid-cols-1 max-w-4xl mx-auto' : 'lg:grid-cols-4'} gap-4`}>
             {/* Desktop Left List (hidden on mobile and in focus mode) */}
             {!isFocusMode && (
-              <div className="hidden lg:block lg:col-span-1 bg-white rounded-lg border border-slate-200 shadow-xs p-3 space-y-2 max-h-[640px] overflow-y-auto">
+              <div translate="no" className="notranslate hidden lg:block lg:col-span-1 bg-white rounded-lg border border-slate-200 shadow-xs p-3 space-y-2 max-h-[640px] overflow-y-auto">
                 <div className="text-xs font-bold text-slate-700 uppercase tracking-wider pb-1 border-b border-slate-100 flex items-center justify-between">
                   <span>Desafios ({filteredQuestions.length})</span>
                   <span className="text-emerald-600 font-bold">{completedInFilter} ✓</span>
@@ -624,17 +624,17 @@ export const QuizSection: React.FC<QuizSectionProps> = ({
             {/* Right Active Question Card (Always front-and-center on mobile!) */}
             <div className={isFocusMode ? 'w-full' : 'lg:col-span-3'}>
               {currentQuestion ? (
-                <div className="bg-white rounded-lg border border-slate-200 shadow-md p-4 sm:p-6 space-y-4">
+                <div translate="no" className="notranslate bg-white rounded-lg border border-slate-200 shadow-md p-4 sm:p-6 space-y-4">
                   {/* Question Header */}
                   <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-200">
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="bg-[#1b2a4a] text-white text-xs font-bold px-2 py-0.5 rounded">
+                      <span className="bg-[#1b2a4a] text-white text-xs font-bold px-2 py-0.5 rounded notranslate" translate="no">
                         {currentQuestion.level}
                       </span>
-                      <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded">
+                      <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded notranslate" translate="no">
                         {currentQuestion.conceptTag}
                       </span>
-                      <span className="text-xs text-slate-500 hidden sm:inline">
+                      <span className="text-xs text-slate-500 hidden sm:inline notranslate" translate="no">
                         {currentQuestion.type === 'multiple_choice'
                           ? 'Múltipla Escolha'
                           : currentQuestion.type === 'code_exercise'
@@ -644,12 +644,12 @@ export const QuizSection: React.FC<QuizSectionProps> = ({
                     </div>
 
                     <div className="flex items-center space-x-2">
-                      <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 flex items-center gap-1">
+                      <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 flex items-center gap-1 notranslate" translate="no">
                         <Sparkles className="w-3 h-3 text-amber-500" />
                         +{currentQuestion.xpReward} XP
                       </span>
                       {completedQuestionIds.includes(currentQuestion.id) && (
-                        <span className="text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-medium flex items-center gap-1">
+                        <span className="text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-medium flex items-center gap-1 notranslate" translate="no">
                           <Check className="w-3 h-3" /> Concluído
                         </span>
                       )}
@@ -657,18 +657,18 @@ export const QuizSection: React.FC<QuizSectionProps> = ({
                   </div>
 
                   {/* Title & Prompt */}
-                  <div className="space-y-1.5">
-                    <h2 className="text-base sm:text-lg font-bold text-slate-900">
+                  <div className="space-y-1.5 notranslate" translate="no">
+                    <h2 className="text-base sm:text-lg font-bold text-slate-900 notranslate" translate="no">
                       {currentQuestion.title}
                     </h2>
-                    <p className="text-sm sm:text-base text-slate-700 leading-relaxed font-sans">
+                    <p className="text-sm sm:text-base text-slate-700 leading-relaxed font-sans notranslate" translate="no">
                       {currentQuestion.question}
                     </p>
                   </div>
 
                   {/* Case 1: Multiple Choice or Theory Options */}
                   {(currentQuestion.type === 'multiple_choice' || currentQuestion.type === 'theory') && currentQuestion.options && (
-                    <div className="space-y-2 pt-2">
+                    <div className="space-y-2 pt-2 notranslate" translate="no">
                       {currentQuestion.options.map((option, idx) => {
                         const isSelected = selectedOption === idx;
                         const isThisCorrect = submitted && idx === currentQuestion.correctAnswerIndex;
@@ -688,13 +688,19 @@ export const QuizSection: React.FC<QuizSectionProps> = ({
                             key={idx}
                             onClick={() => handleOptionSelect(idx)}
                             disabled={submitted}
-                            className={`w-full text-left p-3 rounded-lg border text-xs sm:text-sm transition-all flex items-center justify-between cursor-pointer ${btnClass}`}
+                            translate="no"
+                            className={`notranslate w-full text-left p-3 rounded-lg border text-xs sm:text-sm transition-all flex items-center justify-between cursor-pointer ${btnClass}`}
                           >
-                            <div className="flex items-center space-x-3">
-                              <span className="w-6 h-6 rounded-full border border-slate-300 flex items-center justify-center font-bold text-xs select-none shrink-0">
+                            <div className="flex items-center space-x-3 notranslate" translate="no">
+                              <span
+                                translate="no"
+                                className="notranslate w-6 h-6 rounded-full border border-slate-300 flex items-center justify-center font-bold text-xs select-none shrink-0 font-mono"
+                              >
                                 {String.fromCharCode(65 + idx)}
                               </span>
-                              <span className="font-mono text-xs sm:text-sm break-all">{option}</span>
+                              <span translate="no" className="notranslate font-mono text-xs sm:text-sm break-all font-semibold">
+                                {option}
+                              </span>
                             </div>
                             {isThisCorrect && <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />}
                             {isThisWrong && <XCircle className="w-5 h-5 text-red-600 shrink-0" />}
@@ -755,9 +761,10 @@ export const QuizSection: React.FC<QuizSectionProps> = ({
 
                   {/* Feedback Message */}
                   {submitted && (
-                    <div className="space-y-3 animate-in fade-in">
+                    <div translate="no" className="notranslate space-y-3 animate-in fade-in">
                       <div
-                        className={`p-3.5 rounded-lg border text-xs sm:text-sm space-y-2 ${
+                        translate="no"
+                        className={`notranslate p-3.5 rounded-lg border text-xs sm:text-sm space-y-2 ${
                           isCorrect
                             ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
                             : 'bg-red-50 border-red-300 text-red-900'
@@ -777,9 +784,9 @@ export const QuizSection: React.FC<QuizSectionProps> = ({
                           )}
                         </div>
 
-                        <p className="font-medium text-xs sm:text-sm">{feedbackMessage}</p>
+                        <p className="font-medium text-xs sm:text-sm notranslate" translate="no">{feedbackMessage}</p>
 
-                        <div className="pt-2 border-t border-slate-200/60 font-sans text-slate-800 leading-relaxed text-[13px] sm:text-sm">
+                        <div translate="no" className="notranslate pt-2 border-t border-slate-200/60 font-sans text-slate-800 leading-relaxed text-[13px] sm:text-sm">
                           <span className="font-bold">Explicação Técnica da SAP: </span>
                           {currentQuestion.explanation}
                         </div>

@@ -91,7 +91,7 @@ export const Header: React.FC<HeaderProps> = ({
   const progressInLevel = Math.min(100, Math.max(0, ((userProfile.xp - currentLevelBaseXp) / (nextLevelXp - currentLevelBaseXp)) * 100));
 
   return (
-    <header className="bg-[#1b2a4a] text-white border-b border-[#2d4373] shadow-md sticky top-0 z-50 w-full max-w-full overflow-x-hidden">
+    <header translate="no" className="notranslate bg-[#1b2a4a] text-white border-b border-[#2d4373] shadow-md sticky top-0 z-50 w-full max-w-full overflow-x-hidden">
       {/* Top utility bar */}
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-2.5">
         {/* Left: Brand + Transaction code input */}

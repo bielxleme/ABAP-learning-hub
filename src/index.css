@@ -90,3 +90,11 @@ pre, code {
     line-height: 1.55;
   }
 }
+
+/* Enforce no-translate on code elements and badges */
+.notranslate,
+[translate="no"] {
+  -webkit-user-select: auto;
+  user-select: auto;
+}
+

@@ -568,7 +568,7 @@ export default function App() {
       />
 
       {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 lg:p-8 space-y-5 pb-24 md:pb-8 max-w-full overflow-x-hidden">
+      <main translate="no" className="notranslate flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 lg:p-8 space-y-5 pb-24 md:pb-8 max-w-full overflow-x-hidden">
         {/* Mobile Instructional Quick Guide ("Onde ir agora" - Claro e sem confusão de botões) */}
         <div className="md:hidden bg-gradient-to-r from-blue-900 to-[#1b2a4a] text-white p-3 rounded-lg shadow-sm border border-blue-700/50 flex items-center justify-between gap-2 text-xs">
           <div className="flex items-center space-x-2">

@@ -176,8 +176,8 @@ export const SimuladoModal: React.FC<SimuladoModalProps> = ({
           <div className="p-5 sm:p-6 overflow-y-auto flex-1 space-y-5">
             {!isFinished ? (
               <>
-                {/* Progress and status */}
-                <div className="flex items-center justify-between text-xs text-slate-600 bg-slate-100 p-2.5 rounded-lg border border-slate-200">
+                {/* Progress / Status */}
+                <div translate="no" className="notranslate flex items-center justify-between text-xs text-slate-600 bg-slate-100 p-2.5 rounded-lg border border-slate-200">
                   <span className="font-bold text-slate-800">
                     Questão {currentIndex + 1} de {simuladoQuestions.length}
                   </span>
@@ -188,22 +188,22 @@ export const SimuladoModal: React.FC<SimuladoModalProps> = ({
 
                 {/* Question Card */}
                 {currentQ && (
-                  <div className="space-y-4">
-                    <div className="space-y-1.5">
-                      <span className="text-[11px] font-bold text-[#0070f2] uppercase tracking-wider bg-blue-50 px-2 py-0.5 rounded">
+                  <div translate="no" className="notranslate space-y-4">
+                    <div className="space-y-1.5 notranslate" translate="no">
+                      <span className="text-[11px] font-bold text-[#0070f2] uppercase tracking-wider bg-blue-50 px-2 py-0.5 rounded notranslate" translate="no">
                         {currentQ.conceptTag}
                       </span>
-                      <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-snug">
+                      <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-snug notranslate" translate="no">
                         {currentQ.title}
                       </h3>
-                      <p className="text-sm sm:text-[15px] text-slate-700 leading-relaxed">
+                      <p className="text-sm sm:text-[15px] text-slate-700 leading-relaxed notranslate" translate="no">
                         {currentQ.question}
                       </p>
                     </div>
 
                     {/* Options */}
                     {currentQ.options && (
-                      <div className="space-y-2 pt-2">
+                      <div className="space-y-2 pt-2 notranslate" translate="no">
                         {currentQ.options.map((opt, oIdx) => {
                           const isSelected = selectedAnswers[currentQ.id] === oIdx;
 
@@ -211,14 +211,16 @@ export const SimuladoModal: React.FC<SimuladoModalProps> = ({
                             <button
                               key={oIdx}
                               onClick={() => handleSelectOption(oIdx)}
-                              className={`w-full text-left p-3.5 rounded-lg border text-xs sm:text-sm font-medium transition-all flex items-start space-x-3 cursor-pointer ${
+                              translate="no"
+                              className={`notranslate w-full text-left p-3.5 rounded-lg border text-xs sm:text-sm font-medium transition-all flex items-start space-x-3 cursor-pointer ${
                                 isSelected
                                   ? 'bg-blue-50 border-[#0070f2] text-blue-950 font-bold ring-2 ring-[#0070f2]/30 shadow-xs'
                                   : 'bg-white hover:bg-slate-50 border-slate-300 text-slate-800'
                               }`}
                             >
                               <span
-                                className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
+                                translate="no"
+                                className={`notranslate w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-xs font-bold font-mono ${
                                   isSelected
                                     ? 'bg-[#0070f2] text-white'
                                     : 'bg-slate-200 text-slate-700'
@@ -226,7 +228,7 @@ export const SimuladoModal: React.FC<SimuladoModalProps> = ({
                               >
                                 {String.fromCharCode(65 + oIdx)}
                               </span>
-                              <span className="flex-1 leading-snug">{opt}</span>
+                              <span translate="no" className="notranslate flex-1 leading-snug font-mono font-semibold">{opt}</span>
                             </button>
                           );
                         })}
@@ -235,8 +237,8 @@ export const SimuladoModal: React.FC<SimuladoModalProps> = ({
 
                     {/* Code question */}
                     {currentQ.type === 'code_exercise' && (
-                      <div className="space-y-2 pt-2">
-                        <label className="text-xs font-bold text-slate-700 block">
+                      <div translate="no" className="notranslate space-y-2 pt-2">
+                        <label className="text-xs font-bold text-slate-700 block notranslate" translate="no">
                           Digite sua solução ABAP:
                         </label>
                         <textarea
@@ -249,7 +251,8 @@ export const SimuladoModal: React.FC<SimuladoModalProps> = ({
                             }))
                           }
                           placeholder={currentQ.codeSnippet || 'Escreva o comando ABAP aqui...'}
-                          className="w-full font-mono text-xs sm:text-sm p-3 bg-slate-900 text-emerald-300 rounded-lg border border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          translate="no"
+                          className="notranslate w-full font-mono text-xs sm:text-sm p-3 bg-slate-900 text-emerald-300 rounded-lg border border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
                     )}

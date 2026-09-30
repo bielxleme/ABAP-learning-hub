@@ -379,19 +379,19 @@ export const AbapPracticeLab: React.FC<AbapPracticeLabProps> = ({
         )}
 
         {/* Right Column: Code Editor & Execution Panel (First on mobile screens!) */}
-        <div className={`${isFocusMode ? 'lg:col-span-12' : 'lg:col-span-8'} bg-white rounded-lg border border-slate-200 shadow-sm p-4 sm:p-5 space-y-4`}>
+        <div translate="no" className={`notranslate ${isFocusMode ? 'lg:col-span-12' : 'lg:col-span-8'} bg-white rounded-lg border border-slate-200 shadow-sm p-4 sm:p-5 space-y-4`}>
           {currentExercise ? (
             <>
               {/* Exercise Header */}
-              <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-200">
-                <div className="space-y-1">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <span className={`text-xs px-2 py-0.5 rounded font-bold ${
+              <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-200 notranslate" translate="no">
+                <div className="space-y-1 notranslate" translate="no">
+                  <div className="flex flex-wrap items-center gap-1.5 notranslate" translate="no">
+                    <span className={`text-xs px-2 py-0.5 rounded font-bold notranslate ${
                       currentExercise.level === 'Nível 1' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'
-                    }`}>
+                    }`} translate="no">
                       {currentExercise.level}
                     </span>
-                    <span className="bg-slate-100 text-slate-700 text-xs px-2 py-0.5 rounded font-medium flex items-center gap-1">
+                    <span className="bg-slate-100 text-slate-700 text-xs px-2 py-0.5 rounded font-medium flex items-center gap-1 notranslate" translate="no">
                       {currentExercise.category === 'SELECT & Open SQL' ? (
                         <Database className="w-3 h-3 text-[#0070f2]" />
                       ) : (
@@ -400,35 +400,35 @@ export const AbapPracticeLab: React.FC<AbapPracticeLabProps> = ({
                       <span>{currentExercise.category}</span>
                     </span>
                     {completedExerciseIds.includes(currentExercise.id) && (
-                      <span className="bg-emerald-50 text-emerald-700 border border-emerald-300 text-xs px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                      <span className="bg-emerald-50 text-emerald-700 border border-emerald-300 text-xs px-2 py-0.5 rounded-full font-bold flex items-center gap-1 notranslate" translate="no">
                         <Check className="w-3 h-3" />
                         Concluído
                       </span>
                     )}
                   </div>
-                  <h3 className="text-base sm:text-lg font-bold text-slate-900">
+                  <h3 className="text-base sm:text-lg font-bold text-slate-900 notranslate" translate="no">
                     {currentExercise.title}
                   </h3>
                 </div>
 
-                <div className="text-right shrink-0">
-                  <span className="text-[10px] text-slate-400 block uppercase font-bold">Recompensa</span>
-                  <span className="text-xs sm:text-sm font-bold text-amber-600 font-mono bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
+                <div className="text-right shrink-0 notranslate" translate="no">
+                  <span className="text-[10px] text-slate-400 block uppercase font-bold notranslate" translate="no">Recompensa</span>
+                  <span className="text-xs sm:text-sm font-bold text-amber-600 font-mono bg-amber-50 border border-amber-200 px-2 py-0.5 rounded notranslate" translate="no">
                     +{currentExercise.xpReward} XP
                   </span>
                 </div>
               </div>
 
               {/* Step-by-Step Instructions */}
-              <div className="p-3 sm:p-3.5 bg-blue-50/70 border border-blue-200 rounded-lg text-xs sm:text-sm text-slate-800 space-y-1.5">
-                <div className="font-bold text-blue-900 flex items-center gap-1.5 text-xs uppercase tracking-wide">
+              <div translate="no" className="notranslate p-3 sm:p-3.5 bg-blue-50/70 border border-blue-200 rounded-lg text-xs sm:text-sm text-slate-800 space-y-1.5">
+                <div className="font-bold text-blue-900 flex items-center gap-1.5 text-xs uppercase tracking-wide notranslate" translate="no">
                   <Compass className="w-4 h-4 text-[#0070f2]" />
                   <span>Objetivo do Exercício:</span>
                 </div>
-                <p className="leading-relaxed font-sans text-slate-700">
+                <p className="leading-relaxed font-sans text-slate-700 notranslate" translate="no">
                   {currentExercise.instruction}
                 </p>
-                <div className="text-[11px] text-slate-500 pt-1 flex items-center gap-1 border-t border-blue-200/60">
+                <div className="text-[11px] text-slate-500 pt-1 flex items-center gap-1 border-t border-blue-200/60 notranslate" translate="no">
                   <Info className="w-3 h-3 text-[#0070f2] shrink-0" />
                   <span>
                     Compatível com <strong>Open SQL clássico</strong> (<code>into wa</code>) e <strong>Open SQL 7.40+</strong> (<code>into @data(wa)</code>).
